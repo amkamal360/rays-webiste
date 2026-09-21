@@ -1,0 +1,14 @@
+{
+  "name": "rays-website",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Rays Microfinance website and content portal",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node build.mjs && npx --yes serve dist -s"
+  },
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "esbuild": "0.23.1"
+  }
+}
