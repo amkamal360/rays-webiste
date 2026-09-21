@@ -11,6 +11,13 @@ import vm from "node:vm";
 import path from "node:path";
 
 const OUT = "dist";
+// Applies a visitor's saved light/dark choice before first paint. Its hash is allowed in vercel.json's CSP;
+// the build fails if the two drift apart.
+const THEME_BOOT = 'try{var t=localStorage.getItem("rays-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}';
+{
+  const h = "'sha256-" + createHash("sha256").update(THEME_BOOT).digest("base64") + "'";
+  if (!(await readFile("vercel.json", "utf8")).includes(h)) { console.error(`vercel.json CSP must allow the theme script: add ${h} to script-src`); process.exit(1); }
+}
 const t0 = Date.now();
 
 // ---------- config ----------
@@ -23,6 +30,8 @@ const CFG = {
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY || fileCfg.supabaseAnonKey || "",
   adobeFontsKit: process.env.ADOBE_FONTS_KIT || fileCfg.adobeFontsKit || "",
   mediaBucket: fileCfg.mediaBucket || "media",
+  turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || fileCfg.turnstileSiteKey || "",
+  aiAnswers: /^(1|on|true|yes)$/i.test(process.env.AI_ANSWERS || String(fileCfg.aiAnswers || "")),
 };
 const SITE_URL = (process.env.SITE_URL || "https://raysfinance.com").replace(/\/$/, "");
 
@@ -107,10 +116,40 @@ const escAttr = s => String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot
 const jsonBlock = (id, o) => `<script type="application/json" id="${id}">${JSON.stringify(o).replace(/</g, "\\u003c").replace(/\u2028|\u2029/g, "")}</script>`;
 const runtimeCfg = { ...CFG, adminScript: `/assets/${adminName}` };
 
+const secById = Object.fromEntries((data.site.sections || []).map(s => [s.id, s]));
+function structuredData(route, title, description, faqs) {
+  const out = [];
+  const segs = route.split("/").filter(Boolean);
+  if (route === "/") out.push(orgLd, { "@context": "https://schema.org", "@type": "WebSite", name: brand.name, url: SITE_URL + "/" });
+  if (segs.length) {
+    const crumbs = [{ name: "Home", url: SITE_URL + "/" }];
+    const sec = secById[segs[0]];
+    if (sec) crumbs.push({ name: sec.title, url: `${SITE_URL}/${sec.id}` });
+    else if (segs[0] === "legal") crumbs.push({ name: "Legal", url: `${SITE_URL}/legal` });
+    else if (segs[0] === "media") crumbs.push({ name: "News", url: `${SITE_URL}/media` });
+    if (segs.length > 1) crumbs.push({ name: title.replace(/ · .*$/, ""), url: SITE_URL + route });
+    out.push({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, item: c.url })) });
+  }
+  // products and services: answer-first descriptions help search and AI assistants quote Rays accurately
+  const sec = secById[segs[0]];
+  const pg = sec && segs[1] ? sec.pages.find(p => p.id === segs[1]) : null;
+  if (pg && sec.id !== "about") out.push({ "@context": "https://schema.org", "@type": sec.id === "financing" ? "FinancialProduct" : "Service",
+    name: pg.title, description: pg.lead || description, url: SITE_URL + route, provider: { "@type": "FinancialService", name: brand.name, url: SITE_URL + "/" }, areaServed: "ET",
+    ...(sec.id === "financing" ? { category: "Sharia-compliant financing" } : {}) });
+  if (segs[0] === "about" && segs[1] === "careers" && segs[2] && segs[2] !== "open") {
+    const j = (data.site.jobs || []).find(x => x.id === segs[2]);
+    if (j) out.push({ "@context": "https://schema.org", "@type": "JobPosting", title: j.title, description: `${j.summary || ""}\n\n${j.body || ""}`, datePosted: todayStr,
+      ...(j.closes ? { validThrough: j.closes + "T23:59:59+03:00" } : {}), employmentType: /part/i.test(j.type) ? "PART_TIME" : /contract/i.test(j.type) ? "CONTRACTOR" : /intern/i.test(j.type) ? "INTERN" : "FULL_TIME",
+      hiringOrganization: { "@type": "Organization", name: brand.name, sameAs: SITE_URL + "/", logo: SITE_URL + "/icons/icon-512.png" },
+      jobLocation: { "@type": "Place", address: { "@type": "PostalAddress", addressLocality: j.location || "Addis Ababa", addressCountry: "ET" } } });
+  }
+  if (faqs && faqs.length) out.push({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faqs.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
+  return out;
+}
+
 function page({ html, title, description, faqs }, route) {
   const embed = route.startsWith("/legal/") ? data : liteData;
-  const ld = [route === "/" ? orgLd : null,
-    faqs && faqs.length ? { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faqs.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) } : null].filter(Boolean);
+  const ld = route === "/_app" ? [] : structuredData(route, title, description, faqs);
   const url = SITE_URL + (route === "/" ? "/" : route);
   return `<!doctype html>
 <html lang="en">
@@ -121,6 +160,8 @@ function page({ html, title, description, faqs }, route) {
 <meta name="description" content="${escAttr(description)}">
 <link rel="canonical" href="${url}">
 <meta name="theme-color" content="#442580">
+<meta name="color-scheme" content="light dark">
+<script>${THEME_BOOT}</script>
 <meta property="og:type" content="website"><meta property="og:url" content="${url}">
 <meta property="og:title" content="${escAttr(title)}"><meta property="og:description" content="${escAttr(description)}">
 <meta property="og:image" content="${SITE_URL}/icons/og.png">
@@ -154,6 +195,37 @@ await writeFile(`${OUT}/_app.html`, page({ html: "", title: "Rays Microfinance",
 // ---------- SEO ----------
 const today = new Date().toISOString().slice(0, 10);
 await writeFile(`${OUT}/sitemap.xml`, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[...routes].map(r => `<url><loc>${SITE_URL}${r === "/" ? "/" : r}</loc><lastmod>${today}</lastmod></url>`).join("\n")}\n</urlset>\n`);
-await writeFile(`${OUT}/robots.txt`, `User-agent: *\nDisallow: /admin\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+await writeFile(`${OUT}/robots.txt`, `# Search engines and AI assistants are welcome to read the public site.\nUser-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${SITE_URL}/sitemap.xml\n# Summary for AI assistants: ${SITE_URL}/llms.txt\n`);
+
+// ---------- AEO: llms.txt (short map) and llms-full.txt (all public content as plain text) ----------
+const plain = s => String(s || "").replace(/\*\*/g, "");
+const L = [];
+L.push(`# ${brand.name}`, "", `> ${brand.tagline}`, "",
+  `Rays Microfinance is a regulated microfinance institution in Ethiopia, established in 2014. It offers accounts, interest-free (Sharia-compliant) financing, payments and financial infrastructure. ${(data.site.stats || []).map(x => `${x.label}: ${x.value}`).join("; ")}.`, "");
+for (const s of data.site.sections || []) {
+  L.push(`## ${s.title}`, "", s.intro, "");
+  for (const p of s.pages) { const f = s.pages.find(x => x.id === p.id); L.push(`- [${p.title}](${SITE_URL}/${s.id}/${p.id}): ${plain(f.lead || "")}`); }
+  L.push("");
+}
+L.push("## Help and policies", "", `- [Help and FAQs](${SITE_URL}/about/help): ${(data.site.faqs || []).length} common questions with answers`);
+for (const p of (data.site.policies || []).filter(p => p.published !== false)) L.push(`- [${p.title}](${SITE_URL}/legal/${p.id}): ${plain(p.summary)}`);
+L.push("", "## Optional", "", `- [Full text of this site](${SITE_URL}/llms-full.txt)`, `- [News](${SITE_URL}/media)`, "");
+await writeFile(`${OUT}/llms.txt`, L.join("\n"));
+
+const F = [`# ${brand.name}: full website content`, "", `Source: ${SITE_URL} · Generated ${todayStr}`, ""];
+for (const s of data.site.sections || []) for (const p of s.pages) {
+  if (p.ref) continue;
+  F.push(`## ${p.title}`, `URL: ${SITE_URL}/${s.id}/${p.id}`, "", plain(p.lead), "", plain(p.body));
+  for (const x of p.steps || []) F.push(`- Step: ${x.title}: ${x.text}`);
+  for (const x of p.features || []) F.push(`- ${x.title}: ${x.text}`);
+  for (const x of p.list || []) F.push(`- ${x}`);
+  F.push("");
+}
+F.push("## Frequently asked questions", `URL: ${SITE_URL}/about/help`, "");
+for (const f of data.site.faqs || []) F.push(`### ${f.q}`, plain(f.a), "");
+for (const p of (data.site.policies || []).filter(p => p.published !== false)) F.push(`## ${p.title}`, `URL: ${SITE_URL}/legal/${p.id}`, "", plain(p.body).replace(/^## /gm, "### "), "");
+const c = data.site.contact || {};
+F.push("## Contact", `URL: ${SITE_URL}/about/contact`, "", [c.address, c.phone, c.email, c.hours].filter(Boolean).join("\n") || "Use the contact form or visit any branch.", "");
+await writeFile(`${OUT}/llms-full.txt`, F.join("\n"));
 
 console.log(`built ${routes.size} pages in ${Date.now() - t0} ms · app ${(appJs.length / 1024).toFixed(1)} KB · portal ${(adminJs.length / 1024).toFixed(1)} KB (lazy) · css ${(css.length / 1024).toFixed(1)} KB (inlined)`);

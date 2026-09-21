@@ -1,104 +1,149 @@
 # Rays Microfinance website
 
-Public website and content portal for Rays Microfinance. Brand follows the Rays Brand Manual v1.0 (logo and "Ahead of the curve." artwork extracted as vectors from the manual; Rays Purple `#442580`, Rays Yellow `#FCC909`, Rays Black `#231F20`; Myriad Pro with Helvetica fallback).
+One folder for the whole website:
+- Push it to GitHub, and **Vercel** builds and hosts the site.
+- A **GitHub Action** applies the **Supabase** database changes and deploys the server functions.
 
-## Built for phones on mobile data
-
-Every page is prerendered to static HTML at build time, with its content already inside, so a phone gets a complete, readable page in the first response, even before JavaScript runs.
-
-| First visit, home page | |
-|---|---|
-| Requests | 3 (HTML, logo, script) |
-| Transferred | about 56 KB |
-| Lighthouse mobile (slow 4G, mid-range phone) | 100 in all four categories on the home, financing, contact, careers and privacy pages |
-| Largest contentful paint | about 1.4 s |
-| Layout shift | 0 |
-
-How it gets there:
-- **Static HTML per page.** The build runs the same render code in Node and writes one HTML file per route, plus `sitemap.xml` and `robots.txt`.
-- **No libraries on public pages.** The public script is about 10 KB gzipped. The CSS is inlined, so there's no render-blocking request.
-- **The portal is separate.** `admin.js` and the Supabase client are downloaded only when someone opens `/admin`.
-- **Content stays fresh without a rebuild.** After load, the page quietly checks Supabase and updates if an editor changed something. Visiting other pages needs no further downloads.
-- **Uploaded photos are optimised.** Before upload, photos are resized in the browser to 1600 px WebP, with a 640 px thumbnail for cards, so a 5 MB phone photo becomes roughly 150–300 KB.
-- **The hero animation is well behaved.** It runs once for about 10 s, pauses when off-screen or in a background tab, and caps pixel density on phones. It shows a still frame for reduced-motion and data-saver users.
-- **Assets are cached.** Script filenames carry a content hash and are cached for a year; HTML always revalidates.
-- **Off-screen rendering is skipped.** Sections below the fold use `content-visibility`.
-
-## What's on the site
-
-- **Seven sections from the sitemap:** Personal, Business, Financing, Payments, Infrastructure, Platforms and About, plus Media for news, videos and galleries.
-- **Legal** (`/legal`), linked from every footer:
-  - Privacy policy
-  - Terms and conditions
-  - Cookies and storage
-  - Complaints and customer feedback
-  - Security and fraud awareness
-  - Anti-money laundering and KYC
-  - Sharia compliance statement
-  - Accessibility
-
-  **These are drafts.** Legal and compliance must review each one and fill in every `[bracketed]` detail before launch. Each policy has a "Reviewed" tick in the portal so you can track progress.
-- **Careers** (`/about/careers`): editors publish roles with a closing date. Candidates apply with a CV (PDF or Word, up to 5 MB) and must give consent before submitting. There's also an "open application" for people who don't see a matching role. CVs go to a private storage bucket that only portal editors can open, through links that expire after 5 minutes. Applications move through stages: new, in review, shortlisted, interview, offer, hired, not progressing.
-- **Help and FAQs** (`/about/help`): searchable and grouped by category. The questions are also published as FAQ data for Google.
-- **Branches and agents** (`/about/locations`): filter by town and type. Each location has call and directions buttons that open Google Maps, so there's no heavy embedded map on the page.
-- **Downloads** (`/about/downloads`): forms, tariff guides, reports and brochures taken from the media library.
-- **Financing calculator** on the eMurabaha and Murabaha pages. It's switched off until you set an indicative profit rate, approved by finance and your Sharia advisers.
-- **Site search**: the search icon, or the `/` key. It searches pages, FAQs, policies, jobs and news instantly, with no server involved.
-- **Announcement banner** for service notices or campaigns. Visitors can dismiss it.
-- **Quick contact buttons** (call, free call, USSD, WhatsApp, Telegram, email), social media links and SahayPay app links. Each is set in the portal and hidden while empty.
-- **Search engine details:** a sitemap, robots.txt, canonical links, social-share previews and organisation data for Google.
-- **Installable** on a phone's home screen via the web manifest and app icons.
-
-## Project layout
+Brand follows the Rays Brand Manual v1.0: official vector logo and tagline, Rays Purple `#442580`, Rays Yellow `#FCC909`, Myriad Pro with a Helvetica fallback.
 
 ```
-src/app.js          public site (render, routing, hydration, rain animation)
-src/admin.js        portal (loaded on demand)
-src/styles.css      all styles
-assets/brand/       official logo, mark and tagline (SVG, from the brand manual)
-public/             favicon, app icons, social image, web manifest
-content.json        starter content (every section and page)
-build.mjs           build: minify, fingerprint, prerender → dist/
-supabase/schema.sql database, access rules and storage bucket
-supabase/seed.sql   optional: load starter content with SQL
+rays-website/
+├─ src/                    website code: app.js (public site), admin.js (portal, loaded only on /admin), styles.css
+├─ assets/brand/           official logo, mark and tagline (from the brand manual)
+├─ public/                 favicon, app icons, social-share image, web manifest
+├─ content.json            starter content (pages, FAQs, policies)
+├─ build.mjs               build: prerenders every page to static HTML, sitemap, llms.txt
+├─ vercel.json             hosting: security headers, redirects, caching
+├─ supabase/
+│  ├─ migrations/          database changes, applied in order (idempotent)
+│  ├─ functions/           Edge Functions: submit (forms), ask (Ask Rays), track (analytics)
+│  ├─ config.toml          Supabase CLI settings
+│  ├─ setup-all.sql        all migrations in one file, for pasting into the SQL editor
+│  ├─ seed.sql             starter content
+│  └─ add-admin.sql        make a user a website editor
+└─ .github/workflows/supabase.yml   deploys supabase/ on every push to main
 ```
 
-Run locally: `npm install && npm run preview`, then open the printed address. Without Supabase keys the site runs in preview mode, and portal edits are saved in your browser only.
+## What visitors get
+
+- **Four menu items:** Personal, Business, Financing, Partners. Each opens **one short page** with every product's key facts and a next step. Everything else lives in the footer.
+- **Ask Rays**, front and centre. Visitors type a question and the answer appears right there.
+  - Without AI, it answers instantly from the FAQs and pages.
+  - With AI switched on, Claude answers in the visitor's language (Amharic, Afaan Oromoo, Somali, Arabic or English), using only Rays website content, and cites the pages it used.
+- **Six "I want to…" shortcuts** under the ask box: open an account, get financing, send and pay, accept payments, find a branch, get help.
+- **Light and dark mode**, fast on mobile data: static HTML, about 60 KB for a first visit.
 
 ## Deploy
 
-### 1. Supabase
-1. Create a project at supabase.com. The Frankfurt region is closest to Ethiopia among common options.
-2. Open SQL Editor and run `supabase/schema.sql`.
-3. Under Authentication → Users, add each editor (email and password). Then run:
-   `insert into public.admins (user_id) select id from auth.users where email = 'editor@raysfinance.com';`
-4. Under Authentication → URL Configuration, set Site URL to `https://raysfinance.com`.
-5. Load content: either run `supabase/seed.sql`, or sign in at `/admin` and choose **Load starter content**.
+### 1. Push to GitHub
+```bat
+git add .
+git commit -m "Rays website"
+git push
+```
 
-### 2. Vercel
-1. Push this folder to a GitHub repository and import it in Vercel. The framework preset can be "Other"; `vercel.json` already sets the build command and the output directory (`dist`).
-2. Under Settings → Environment Variables, add:
-   - `SUPABASE_URL`: from Supabase → Project Settings → API
-   - `SUPABASE_ANON_KEY`: the "anon public" key
-   - `SITE_URL`: `https://raysfinance.com`
-   - `ADOBE_FONTS_KIT`: optional, your Adobe Fonts project ID for Myriad Pro
-3. Deploy.
+### 2. Vercel (website)
+Import the repository in Vercel; `vercel.json` already sets the build. Under **Settings → Environment Variables**, add:
 
-### 3. Automatic rebuilds when content changes (recommended)
-Pages already show edits within a second through the background refresh. A rebuild also bakes the edits into the static HTML, which search engines see and which is the fastest possible first paint.
-1. Vercel → Settings → Git → Deploy Hooks: create a hook and copy its URL.
-2. Supabase → Database → Webhooks: create a webhook on tables `site` and `posts` for insert, update and delete. Use type HTTP Request, method POST, with the deploy-hook URL.
+| Name | Value | Required |
+|---|---|---|
+| `SUPABASE_URL` | Supabase → Project Settings → Data API → Project URL | yes |
+| `SUPABASE_ANON_KEY` | Supabase → Project Settings → API Keys → **Legacy** → `anon` `public` | yes |
+| `SITE_URL` | `https://raysfinance.com` | yes |
+| `TURNSTILE_SITE_KEY` | Cloudflare → Turnstile → your widget → Site key | recommended |
+| `AI_ANSWERS` | `on`, once `ANTHROPIC_API_KEY` is set in Supabase (step 3) | optional |
+| `ADOBE_FONTS_KIT` | Adobe Fonts project ID for Myriad Pro | optional |
 
-### 4. Domain via Cloudflare DNS
-1. Vercel → Settings → Domains: add `raysfinance.com` and `www.raysfinance.com`, and pick which one redirects to the other.
-2. Cloudflare → DNS: add the records Vercel shows. Usually these are:
-   - `A` record, name `@`, value `76.76.21.21`
-   - `CNAME` record, name `www`, value `cname.vercel-dns.com`
-3. Set both records to **DNS only** (grey cloud). Vercel already serves from a global CDN and issues the SSL certificate. Proxying through Cloudflare as well adds a second hop and can block certificate renewal. If you do switch the proxy on, set Cloudflare SSL/TLS to **Full (strict)**.
+Never put the `service_role` or secret key in Vercel.
 
-## Protecting the forms from spam
-The contact and application forms have a hidden spam trap, and the database limits field lengths and file types. Before a public launch, consider adding Cloudflare Turnstile. It's free and you already use Cloudflare. You'd send submissions through a small Supabase Edge Function that checks the Turnstile token first.
+### 3. Supabase (database and functions)
+**Option A: automatic (recommended).** In GitHub, open **Settings → Secrets and variables → Actions** and add:
+- **Secrets:**
+  - `SUPABASE_ACCESS_TOKEN`: supabase.com → Account → Access Tokens
+  - `SUPABASE_DB_PASSWORD`
+  - `SUPABASE_PROJECT_REF`: Project Settings → General → Project ID
+  - Optional: `TURNSTILE_SECRET_KEY` and `ANTHROPIC_API_KEY`
+- **Variable:** `ALLOWED_ORIGINS` = `https://raysfinance.com,https://www.raysfinance.com,https://rays-webiste.vercel.app`
 
-## Fonts
-The manual requires Myriad Pro, a licensed Adobe font, so it isn't bundled. Create an Adobe Fonts web project containing Myriad Pro and set its display to "swap", then put the project ID in `ADOBE_FONTS_KIT`. Until then the site uses Helvetica, the manual's secondary typeface. Ethiopic text uses the phone's built-in font (Noto Sans Ethiopic on Android, Kefa on iPhone), so there's no extra download.
-"# rays-webiste" 
+Then go to **Actions → Supabase → Run workflow**. From then on, every push that changes `supabase/` redeploys it automatically.
+
+**Option B: by hand.**
+1. Paste `supabase/setup-all.sql` into **SQL Editor** and run it.
+2. Run `supabase/seed.sql` once for the starter content.
+3. Deploy the functions with the CLI:
+   ```bash
+   supabase link --project-ref YOUR_REF
+   supabase functions deploy submit --no-verify-jwt
+   supabase functions deploy ask --no-verify-jwt
+   supabase functions deploy track --no-verify-jwt
+   supabase secrets set ALLOWED_ORIGINS=... TURNSTILE_SECRET_KEY=... ANTHROPIC_API_KEY=...
+   ```
+
+**Either way, also in the Supabase dashboard:**
+1. **Authentication → Sign In / Providers → Email:** turn off **Allow new users to sign up**.
+2. **Authentication → Multi-Factor:** make sure TOTP is on.
+3. **Authentication → Attack Protection:** turn on CAPTCHA, choose Turnstile, and paste the Turnstile **secret** key.
+4. **Authentication → URL Configuration:** set Site URL to `https://raysfinance.com`.
+5. **Authentication → Users → Add user** (tick Auto Confirm). Then edit the email in `supabase/add-admin.sql` and run it.
+
+### 4. Sign in
+Open `/admin`, sign in, and set up two-factor with an authenticator app. Then fill in the contact details, branches and links under **Brand, contact and links**.
+
+### 5. Domain (Cloudflare DNS)
+1. In **Vercel → Domains**, add `raysfinance.com` and `www.raysfinance.com`.
+2. In **Cloudflare DNS**, add the records Vercel shows (usually A `@` → `76.76.21.21` and CNAME `www` → `cname.vercel-dns.com`), set to **DNS only** (grey cloud). Leave MX and TXT records alone.
+
+## Security
+
+| Layer | Protection |
+|---|---|
+| Database rules | Only listed admins **with two-factor sign-in** can change anything. Postgres enforces this, so it holds even against direct API calls. |
+| Sign-in | Password + authenticator code, Turnstile bot check, Supabase's sign-in rate limits, and sign-out after 30 minutes idle. |
+| Public forms | Sent only through the `submit` function, which checks origin, the Turnstile bot test and rate limits (5 an hour and 12–15 a day per connection; 3 applications a day per email), and validates every field. The public can't write to the database or storage directly. |
+| CVs | Private storage, opened by editors through 5-minute links. |
+| Ask Rays | Checks origin, limits each connection to 20 questions per 10 minutes and 80 a day, and answers only from website content. Long numbers and emails are removed before questions are stored. |
+| Activity log | Every portal change records who and when (**Portal → Activity log**). |
+| Headers | Strict content security policy, HSTS, no framing. The portal is never indexed or cached. |
+
+## Insights (analytics)
+
+**Portal → Insights** shows, for the last 7, 30 or 90 days:
+- visitors and page views per day
+- top pages, and what people click
+- **what people ask and search for**, and **questions the site couldn't answer** (add these to the FAQs)
+- answer feedback (👍 👎), referrers, devices, and pages not found
+
+It uses no cookies and stores no IP addresses: visitors are counted with a one-way code that changes daily. "Do Not Track" is respected. Data is kept for 13 months, and questions for 90 days.
+
+## SEO and AEO (answer engines)
+
+- **Static pages:** every page is prerendered to HTML with its title, description, canonical link and social-share tags.
+- **Structured data:**
+  - Organisation, WebSite and BreadcrumbList on every page
+  - FinancialProduct for financing, and Service for other products
+  - FAQPage on Help
+  - JobPosting on open roles, so they can appear in Google's job listings
+- **For AI assistants:**
+  - `/llms.txt`: a short map of the site
+  - `/llms-full.txt`: all public content as plain text
+  - `robots.txt` welcomes search engines and AI crawlers, and excludes `/admin`
+
+  This helps assistants such as ChatGPT, Claude and Perplexity quote Rays accurately.
+- **Answer-first writing:** every product's first sentence answers "what is it and how do I get it".
+- **Search Console:** add `raysfinance.com` in Google Search Console and submit `/sitemap.xml`.
+
+## Local preview
+
+```bash
+npm install
+npm run preview
+```
+Without Supabase keys the site runs in preview mode. On `localhost` only, the portal saves edits in your browser.
+
+## Before launch
+
+- Legal and compliance review of every policy. Fill in the `[bracketed]` details, then tick "Reviewed" in the portal.
+- Contact details, branches, social and app links.
+- Replace the sample news post, and delete or open the example job.
+- Only switch on the financing calculator once the profit rate is approved.
+- Upgrade Vercel to **Pro** (the Hobby plan is for non-commercial use) and Supabase to **Pro** (daily backups).

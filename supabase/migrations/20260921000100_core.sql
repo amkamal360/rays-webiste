@@ -1,4 +1,4 @@
--- Rays website backend (Supabase). Run once in Supabase → SQL Editor.
+-- Rays website: core tables, access rules and storage buckets.
 -- Public visitors: read site content + published posts + media files, and send contact messages.
 -- Admins (listed in public.admins): full read/write through the portal.
 
@@ -9,7 +9,9 @@ create table if not exists public.admins (
 
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.admins where user_id = auth.uid());
+  -- editors must be listed AND signed in with two-factor authentication (aal2)
+  select exists (select 1 from public.admins where user_id = auth.uid())
+     and coalesce(auth.jwt() ->> 'aal', 'aal1') = 'aal2';
 $$;
 
 create table if not exists public.site (
@@ -140,6 +142,3 @@ drop policy if exists "cvs admin read" on storage.objects;
 create policy "cvs admin read" on storage.objects for select using (bucket_id = 'cvs' and public.is_admin());
 drop policy if exists "cvs admin delete" on storage.objects;
 create policy "cvs admin delete" on storage.objects for delete using (bucket_id = 'cvs' and public.is_admin());
-
--- After creating your first editor in Authentication → Users, make them an admin:
--- insert into public.admins (user_id) select id from auth.users where email = 'editor@raysfinance.com';

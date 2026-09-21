@@ -9,202 +9,244 @@
   "domain": "raysfinance.com"
  },
  "home": {
-  "lead": "Rays Microfinance is a regulated financial institution building modern digital financial services for individuals, businesses, MSMEs and institutions across Ethiopia. Accounts, ethical financing, payments and technology infrastructure, in one connected ecosystem.",
-  "storyTitle": "Where opportunity begins",
-  "storyText": "Rays represents what we believe financial infrastructure should do: create the conditions for people, businesses and ideas to grow.\n\nWe are building a digital financial institution and infrastructure layer designed around accessibility, connectivity, ethical finance and technology.",
+  "lead": "Accounts, ethical financing and payments for people and businesses across Ethiopia. Ask us anything, or pick what you want to do.",
   "capabilities": [
    {
-    "title": "Financial services",
-    "text": "Accounts, savings, payments, cards and cheques for individuals, groups, NGOs, businesses and MSMEs.",
-    "href": "#/personal/accounts"
+    "title": "Banking",
+    "text": "Accounts, savings, cards, cheques and payments for people, groups, NGOs and businesses.",
+    "href": "#/personal"
    },
    {
-    "title": "Ethical finance",
-    "text": "Murabaha, e-Murabaha, Musharaka and Ijara, structured around real economic activity.",
-    "href": "#/financing/emurabaha"
+    "title": "Ethical financing",
+    "text": "Interest-free Murabaha, Musharaka and Ijara, with digital applications through eMurabaha.",
+    "href": "#/financing"
    },
    {
-    "title": "Financial infrastructure",
-    "text": "Accounts, payments, collections, settlement, wallets and financing for institutions, fintechs and developers.",
-    "href": "#/infrastructure/build"
+    "title": "Infrastructure",
+    "text": "The wallet, payments and core banking platforms behind 5M+ customers, available to partners.",
+    "href": "#/partners"
    }
   ],
-  "connectivityTitle": "Connected to Ethiopia's financial ecosystem",
-  "connectivityText": "Rays is among the few microfinance institutions in Ethiopia with a National Settlement Account, connected to national payment infrastructure, major banks and mobile financial services.",
-  "connectivity": [
-   "National banking infrastructure",
-   "EthSwitch",
-   "Commercial Bank of Ethiopia",
-   "Dashen Bank",
-   "Awash Bank",
-   "Bank of Abyssinia",
-   "Cooperative Bank of Oromia",
-   "Telebirr"
+  "askPlaceholder": "Ask Rays, e.g. How do I open an account?",
+  "suggestions": [
+   "How do I open an account?",
+   "How does eMurabaha work?",
+   "Can I use SahayPay without a smartphone?",
+   "How do I report fraud?"
   ],
-  "walletTitle": "Your digital wallet. Powered by Rays.",
-  "walletText": "Rays owns and operates SahayPay and makes it available to other financial institutions through white-label and licensing arrangements. Today it powers wallet deployments serving a combined 5 million+ registered customers.",
-  "inhouseTitle": "We don't just use financial technology. We build it.",
-  "inhouseText": "At the centre is FinSharia, our in-house ethical core banking platform. Around it we build and operate our own wallet, financing, merchant, payment, API and channel infrastructure, from the core ledger to the customer's screen.",
-  "inhouseList": [
-   "Core banking",
-   "Digital wallet",
-   "Digital financing",
-   "Merchant payments",
-   "Payment integrations",
-   "API and middleware",
-   "Digital channels",
-   "Admin platforms"
+  "tasks": [
+   {
+    "title": "Open an account",
+    "text": "Digitally or at a branch",
+    "href": "#/personal/accounts",
+    "icon": "account"
+   },
+   {
+    "title": "Get financing",
+    "text": "eMurabaha, Murabaha, Ijara",
+    "href": "#/financing",
+    "icon": "finance"
+   },
+   {
+    "title": "Send and pay",
+    "text": "SahayPay app and USSD",
+    "href": "#/personal/payments",
+    "icon": "wallet"
+   },
+   {
+    "title": "Accept payments",
+    "text": "QPay for businesses",
+    "href": "#/business/qpay",
+    "icon": "qr"
+   },
+   {
+    "title": "Find a branch",
+    "text": "40+ branches, 4,000+ agents",
+    "href": "#/about/locations",
+    "icon": "pin"
+   },
+   {
+    "title": "Get help",
+    "text": "FAQs, complaints, fraud",
+    "href": "#/about/help",
+    "icon": "help"
+   }
   ]
  },
  "stats": [
   {
-   "value": "2014",
-   "label": "Rays established"
+   "value": "1.2M+",
+   "label": "Customers"
   },
   {
    "value": "40+",
    "label": "Branches"
   },
   {
-   "value": "1.2M+",
-   "label": "Customers"
-  },
-  {
-   "value": "20K+",
-   "label": "Merchants"
-  },
-  {
    "value": "4,000+",
    "label": "Agents"
   },
   {
-   "value": "ETB 300M+",
-   "label": "Daily transaction value"
-  },
-  {
    "value": "5M+",
-   "label": "Wallet customers on SahayPay deployments"
-  },
-  {
-   "value": "2",
-   "label": "Institutions running white-label SahayPay"
+   "label": "Wallet users on SahayPay"
   }
  ],
  "sections": [
   {
    "id": "personal",
    "title": "Personal",
-   "intro": "Banking built around your life.",
+   "nav": true,
+   "intro": "Save, pay and get cash, from your phone or a branch.",
    "pages": [
     {
      "id": "accounts",
-     "title": "Accounts",
-     "lead": "Open and manage your account through modern digital channels.",
-     "body": "Open an account digitally in minutes. Once your account is approved, Rays can arrange delivery of your ATM card and cheque services to your address within Ethiopia.",
+     "title": "Accounts and savings",
+     "lead": "Open a current or savings account digitally or at any branch. Your ATM card and cheque book can be delivered to you.",
+     "body": "Bring a valid ID to any branch, or start online. Once your account is approved, Rays can deliver your ATM card and cheque book to your address within Ethiopia.",
      "features": [
       {
-       "title": "Current accounts",
-       "text": "Everyday accounts for spending, receiving and moving money."
+       "title": "Current account",
+       "text": "For everyday spending and receiving money."
       },
       {
-       "title": "Digital account opening",
-       "text": "Register, verify and open your account without starting in a branch."
+       "title": "Savings account",
+       "text": "Save toward your goals, alone or as a group."
       },
       {
-       "title": "Group accounts",
-       "text": "Accounts for groups, associations and community-based organisations."
+       "title": "Group and NGO accounts",
+       "text": "For associations, community groups and programmes."
       },
       {
-       "title": "NGO accounts",
-       "text": "Account infrastructure for organisations managing programmes, operations and payments."
+       "title": "Open digitally",
+       "text": "Start without visiting a branch."
       }
      ],
      "cta": {
       "label": "Open an account",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "savings",
-     "title": "Savings",
-     "lead": "Put money aside and watch it build.",
-     "body": "Rays savings accounts give individuals and groups a safe, regulated place to save, with access through branches, agents and digital channels.",
-     "features": [
-      {
-       "title": "Personal savings",
-       "text": "Save regularly toward your own goals."
-      },
-      {
-       "title": "Group savings",
-       "text": "Save together as an association or community group."
-      },
-      {
-       "title": "Digital access",
-       "text": "Check balances and move funds through digital channels."
-      }
-     ],
-     "cta": {
-      "label": "Start saving",
       "href": "#/about/contact"
      }
     },
     {
      "id": "payments",
-     "title": "Payments",
-     "lead": "Move money simply.",
-     "body": "Send money to people and connected financial accounts, pay merchants and settle bills from one account, through the app, USSD or at a branch.",
+     "title": "SahayPay wallet",
+     "lead": "Send money, pay merchants, buy airtime and pay bills from one wallet, on the app or by USSD on any phone.",
+     "body": "SahayPay works across mobile networks. Cash in and out at thousands of agents.",
      "features": [
       {
-       "title": "Transfers",
-       "text": "Move funds across connected accounts and financial institutions."
+       "title": "Send money",
+       "text": "To people, banks and mobile money."
       },
       {
-       "title": "Bills and utilities",
-       "text": "Pay supported bills and utility services digitally."
+       "title": "Pay and top up",
+       "text": "Merchants, airtime, bills and utilities."
       },
       {
-       "title": "Merchant payments",
-       "text": "Pay businesses using QR and digital channels."
+       "title": "Cash in and out",
+       "text": "At supported agents near you."
+      },
+      {
+       "title": "Any phone",
+       "text": "App on smartphones, USSD on basic phones."
       }
      ],
      "cta": {
-      "label": "Explore SahayPay",
-      "href": "#/platforms/sahaypay"
+      "label": "Get SahayPay",
+      "href": "#/about/contact"
      }
     },
     {
-     "id": "atm",
-     "title": "ATM",
-     "lead": "Cash access, wherever you need it.",
-     "body": "Get ATM-enabled access to your account. After approval, your card can be delivered to your address within Ethiopia.",
+     "id": "cards",
+     "title": "ATM cards and cheques",
+     "lead": "Withdraw cash with your Rays ATM card and pay by cheque from your current account.",
+     "body": "Cards and cheque books are issued after your account is approved and can be delivered to your address.",
      "features": [
       {
-       "title": "Card delivery",
-       "text": "Your ATM card arranged and delivered after account approval."
+       "title": "ATM card",
+       "text": "Cash access from your account."
       },
       {
-       "title": "Withdrawals",
-       "text": "Access cash from your Rays account."
+       "title": "Cheque book",
+       "text": "For eligible current accounts."
       }
      ],
      "cta": {
       "label": "Open an account",
       "href": "#/about/contact"
      }
-    },
+    }
+   ]
+  },
+  {
+   "id": "business",
+   "title": "Business",
+   "nav": true,
+   "intro": "Get paid, pay people and grow, on one connected account.",
+   "pages": [
     {
-     "id": "cheques",
-     "title": "Cheques",
-     "lead": "Cheque services for personal and business accounts.",
-     "body": "Issue and process cheque-based transactions from your Rays account. Cheque books can be delivered along with your ATM card after approval.",
+     "id": "accounts",
+     "title": "Business and MSME accounts",
+     "lead": "Accounts for businesses of every size, with collections, payments and financing in one place.",
+     "body": "Built for micro, small and medium enterprises as well as larger companies and institutions.",
      "features": [
       {
-       "title": "Cheque books",
-       "text": "Issued to eligible current account holders."
+       "title": "Business account",
+       "text": "Receive, pay and manage money."
       },
       {
-       "title": "Cheque processing",
-       "text": "Deposit and clear cheques through connected banking infrastructure."
+       "title": "MSME support",
+       "text": "Working capital and inventory financing."
+      }
+     ],
+     "cta": {
+      "label": "Talk to us",
+      "href": "#/about/contact"
+     }
+    },
+    {
+     "id": "qpay",
+     "title": "QPay: accept payments",
+     "lead": "Accept QR and digital payments, then settle them straight into your account.",
+     "body": "QPay is Rays' merchant collection and business payment platform.",
+     "features": [
+      {
+       "title": "QR payments",
+       "text": "Customers scan and pay."
+      },
+      {
+       "title": "Collections",
+       "text": "From customers, merchants and counterparties."
+      },
+      {
+       "title": "Instant settlement",
+       "text": "Through connected payment rails."
+      }
+     ],
+     "cta": {
+      "label": "Start with QPay",
+      "href": "#/about/contact"
+     }
+    },
+    {
+     "id": "payroll",
+     "title": "Pay staff and suppliers",
+     "lead": "Run salaries, supplier payments, petty cash and bulk disbursements from one account.",
+     "body": "Every payment leaves a clear digital trail.",
+     "features": [
+      {
+       "title": "Salaries",
+       "text": "Pay staff digitally."
+      },
+      {
+       "title": "Bulk payments",
+       "text": "One instruction, many recipients."
+      },
+      {
+       "title": "Supplier payments",
+       "text": "Direct and traceable."
+      },
+      {
+       "title": "Petty cash",
+       "text": "Less physical cash to manage."
       }
      ],
      "cta": {
@@ -215,146 +257,17 @@
    ]
   },
   {
-   "id": "business",
-   "title": "Business",
-   "intro": "Financial services built around how your business operates.",
-   "pages": [
-    {
-     "id": "accounts",
-     "title": "Business accounts",
-     "lead": "Your business needs more than an account.",
-     "body": "Rays provides accounts, collections, payments, merchant services and ethical financing in one connected financial ecosystem.",
-     "features": [
-      {
-       "title": "Receive",
-       "text": "Collect customer payments through digital channels."
-      },
-      {
-       "title": "Pay",
-       "text": "Pay employees, suppliers and other counterparties."
-      },
-      {
-       "title": "Manage",
-       "text": "Run your business on reliable digital financial services."
-      },
-      {
-       "title": "Finance",
-       "text": "Access ethical financing for productive business activity."
-      }
-     ],
-     "cta": {
-      "label": "Explore business services",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "msme",
-     "title": "MSME",
-     "lead": "Built for micro, small and medium enterprises.",
-     "body": "From working capital and inventory financing to collections and supplier payments, Rays gives MSMEs the financial tools that larger businesses take for granted.",
-     "features": [
-      {
-       "title": "Working capital",
-       "text": "Digitally enabled financing for inventory and operations."
-      },
-      {
-       "title": "Merchant acceptance",
-       "text": "Accept QR and digital payments through QPay."
-      },
-      {
-       "title": "Supplier payments",
-       "text": "Pay suppliers directly with a clear digital trail."
-      }
-     ],
-     "cta": {
-      "label": "Explore eMurabaha",
-      "href": "#/financing/emurabaha"
-     }
-    },
-    {
-     "id": "collections",
-     "title": "Collections",
-     "lead": "Collect payments from customers, merchants and counterparties.",
-     "body": "Receive money through QR, digital payment channels and connected banks, and settle collected funds through Rays' financial infrastructure.",
-     "features": [
-      {
-       "title": "QR collections",
-       "text": "Accept customer payments with QR codes."
-      },
-      {
-       "title": "Digital channels",
-       "text": "Receive through app, USSD and connected institutions."
-      },
-      {
-       "title": "Settlement",
-       "text": "Move collected funds where they need to go."
-      }
-     ],
-     "cta": {
-      "label": "Start with QPay",
-      "href": "#/platforms/qpay"
-     }
-    },
-    {
-     "id": "payments",
-     "title": "Payments",
-     "lead": "Pay everyone your business depends on.",
-     "body": "Run salaries, supplier payments, petty cash and bulk disbursements from one account.",
-     "features": [
-      {
-       "title": "Salaries",
-       "text": "Digital salary and staff disbursements."
-      },
-      {
-       "title": "Bulk payments",
-       "text": "Send payments to many recipients at once."
-      },
-      {
-       "title": "Petty cash",
-       "text": "Operational payments without relying on physical cash."
-      }
-     ],
-     "cta": {
-      "label": "Start with QPay",
-      "href": "#/platforms/qpay"
-     }
-    },
-    {
-     "id": "financing",
-     "title": "Business financing",
-     "lead": "Ethical financing for productive business activity.",
-     "body": "Murabaha, Musharaka and Ijara structures, with digital applications through eMurabaha, to fund inventory, assets and growth.",
-     "features": [
-      {
-       "title": "Inventory and trade",
-       "text": "Murabaha financing at a transparent cost and agreed profit."
-      },
-      {
-       "title": "Partnership",
-       "text": "Musharaka financing based on shared participation."
-      },
-      {
-       "title": "Equipment and assets",
-       "text": "Ijara leasing structures for productive assets."
-      }
-     ],
-     "cta": {
-      "label": "Explore financing",
-      "href": "#/financing/emurabaha"
-     }
-    }
-   ]
-  },
-  {
    "id": "financing",
    "title": "Financing",
-   "intro": "Finance designed for productive activity.",
+   "nav": true,
+   "intro": "Interest-free financing tied to real assets, with transparent terms.",
    "pages": [
     {
      "id": "emurabaha",
      "title": "eMurabaha",
-     "lead": "Digital financing, from application to financing.",
-     "body": "eMurabaha is Rays' flagship digital financing platform. It brings together digital onboarding, verification, automated scoring and financing workflows, so customers don't have to begin in a branch.",
+     "lead": "Apply for Murabaha financing from your phone: register, apply, get verified and receive a decision without starting at a branch.",
+     "body": "eMurabaha combines digital onboarding, verification and scoring for individuals and MSMEs.",
+     "calculator": true,
      "steps": [
       {
        "title": "Register",
@@ -381,58 +294,37 @@
        "text": "Approved financing is processed through Rays infrastructure."
       }
      ],
-     "features": [
-      {
-       "title": "For individuals",
-       "text": "Ethical financing through a simpler application experience."
-      },
-      {
-       "title": "For MSMEs",
-       "text": "Working capital, inventory and productive business activity."
-      }
-     ],
      "cta": {
       "label": "Apply with eMurabaha",
       "href": "#/about/contact"
-     },
-     "calculator": true
+     }
     },
     {
      "id": "murabaha",
      "title": "Murabaha",
-     "lead": "Asset and commodity financing at a transparent cost and agreed profit.",
-     "body": "Rays purchases the asset or commodity you need and sells it to you at the disclosed cost plus an agreed profit, payable in instalments.",
+     "lead": "Rays buys the asset or goods you need and sells them to you at the disclosed cost plus an agreed profit, paid in instalments.",
+     "body": "You know the full price from the start, and every financing is tied to a real purchase.",
+     "calculator": true,
      "features": [
       {
-       "title": "Transparent pricing",
-       "text": "You know the cost and the profit from the start."
+       "title": "Transparent price",
+       "text": "Cost and profit agreed upfront."
       },
       {
        "title": "Real assets",
-       "text": "Every financing is tied to a real purchase."
+       "text": "No cash loans, no interest."
       }
      ],
      "cta": {
       "label": "Talk to us",
       "href": "#/about/contact"
-     },
-     "calculator": true
+     }
     },
     {
      "id": "musharaka",
      "title": "Musharaka",
-     "lead": "Partnership-based financing.",
-     "body": "Rays and the customer participate together in an underlying economic activity, sharing in its outcome according to agreed terms.",
-     "features": [
-      {
-       "title": "Shared participation",
-       "text": "Financing built on partnership, not debt."
-      },
-      {
-       "title": "Productive activity",
-       "text": "Suited to businesses and ventures with real economic output."
-      }
-     ],
+     "lead": "Partnership financing: Rays and you share in a productive business activity and its outcome.",
+     "body": "Suited to ventures with real economic output.",
      "cta": {
       "label": "Talk to us",
       "href": "#/about/contact"
@@ -441,18 +333,8 @@
     {
      "id": "ijara",
      "title": "Ijara",
-     "lead": "Asset-based financing through leasing.",
-     "body": "Rays acquires the asset and leases it to you for an agreed period and rental, giving you use of equipment, vehicles or property without the full upfront cost.",
-     "features": [
-      {
-       "title": "Use before you own",
-       "text": "Put assets to work immediately."
-      },
-      {
-       "title": "Clear rental terms",
-       "text": "Agreed payments for an agreed period."
-      }
-     ],
+     "lead": "Leasing: Rays buys equipment, vehicles or property and leases it to you for an agreed rental and period.",
+     "body": "Put assets to work without paying the full cost upfront.",
      "cta": {
       "label": "Talk to us",
       "href": "#/about/contact"
@@ -461,69 +343,54 @@
    ]
   },
   {
-   "id": "payments",
-   "title": "Payments",
-   "intro": "Collect money. Make payments. Settle instantly.",
+   "id": "partners",
+   "title": "Partners",
+   "nav": true,
+   "intro": "The platforms behind Rays, available to banks, fintechs and developers.",
    "pages": [
     {
-     "id": "qpay",
-     "title": "QPay",
-     "ref": "platforms/qpay"
-    },
-    {
-     "id": "transfers",
-     "title": "Transfers",
-     "lead": "Move funds across connected accounts and institutions.",
-     "body": "Send money between Rays accounts, to other banks and to mobile financial services through national payment infrastructure, including RTGS for high-value payments.",
+     "id": "build",
+     "title": "Build with Rays",
+     "lead": "Launch financial products on infrastructure that already runs real money: accounts, payments, wallets, financing and settlement through our APIs.",
+     "body": "Rays built its technology in-house to operate financial services at scale. Partners integrate through APIs and middleware with the controls financial transactions need.",
      "features": [
       {
-       "title": "Interbank",
-       "text": "Transfers through EthSwitch and connected banks."
+       "title": "APIs",
+       "text": "Accounts, payments, collections, wallets and financing."
       },
       {
-       "title": "RTGS",
-       "text": "High-value payments through connected infrastructure."
+       "title": "Merchant services",
+       "text": "QR acceptance and collections."
       },
       {
-       "title": "Mobile money",
-       "text": "Transfers to supported mobile financial services."
+       "title": "Financing journeys",
+       "text": "Digital origination on eMurabaha."
+      },
+      {
+       "title": "Controls built in",
+       "text": "Limits, idempotency, audit trails."
       }
      ],
      "cta": {
-      "label": "Talk to us",
+      "label": "Talk to our infrastructure team",
       "href": "#/about/contact"
      }
     },
     {
-     "id": "collections",
-     "title": "Collections",
-     "ref": "business/collections"
-    },
-    {
-     "id": "disbursements",
-     "title": "Disbursements",
-     "lead": "Send funds individually or in bulk.",
-     "body": "Pay beneficiaries, staff, suppliers and programme participants to accounts and wallets across the connected ecosystem.",
-     "features": [
-      {
-       "title": "Bulk disbursements",
-       "text": "One instruction, many recipients."
-      },
-      {
-       "title": "Programme payments",
-       "text": "Suited to NGOs and institutions running payment programmes."
-      }
-     ],
+     "id": "white-label",
+     "title": "White-label wallet",
+     "lead": "Run a modern wallet under your own brand on SahayPay, the platform already powering 5M+ registered customers at two institutions.",
+     "body": "Your institution, your customers, your brand, on Rays infrastructure.",
      "cta": {
-      "label": "Talk to us",
+      "label": "Partner with Rays",
       "href": "#/about/contact"
      }
     },
     {
-     "id": "settlement",
-     "title": "Settlement",
-     "lead": "A National Settlement Account, and the infrastructure to use it.",
-     "body": "Rays is among the few microfinance institutions in Ethiopia with a National Settlement Account, allowing it to participate deeply in the national financial ecosystem and settle funds across institutions.",
+     "id": "connectivity",
+     "title": "Connectivity and settlement",
+     "lead": "Rays holds a National Settlement Account and connects to EthSwitch, major banks and mobile money.",
+     "body": "Among the few microfinance institutions in Ethiopia with this level of connectivity.",
      "list": [
       "National banking infrastructure",
       "EthSwitch",
@@ -536,231 +403,14 @@
      ],
      "cta": {
       "label": "Build with Rays",
-      "href": "#/infrastructure/build"
+      "href": "#/partners/build"
      }
-    }
-   ]
-  },
-  {
-   "id": "infrastructure",
-   "title": "Infrastructure",
-   "intro": "Financial infrastructure for the people building financial services.",
-   "pages": [
-    {
-     "id": "build",
-     "title": "Build with Rays",
-     "lead": "Build on infrastructure that already runs real financial services.",
-     "body": "Rays built its technology from the ground up to operate financial services at scale. Financial institutions, fintechs, technology companies and developers can now build on it.",
-     "features": [
-      {
-       "title": "Accounts",
-       "text": "Connect customers and businesses to accounts and transaction infrastructure."
-      },
-      {
-       "title": "Payments",
-       "text": "Transfers, collections, disbursements and digital payments."
-      },
-      {
-       "title": "Merchant services",
-       "text": "Merchant acceptance, QR and collection capabilities."
-      },
-      {
-       "title": "Wallet infrastructure",
-       "text": "Launch or enhance digital wallets through SahayPay."
-      },
-      {
-       "title": "Financing",
-       "text": "Digital financing journeys on Rays' financing infrastructure."
-      },
-      {
-       "title": "Settlement and connectivity",
-       "text": "Reach Rays' ecosystem and supported payment networks."
-      }
-     ],
-     "cta": {
-      "label": "Talk to our infrastructure team",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "apis",
-     "title": "APIs",
-     "lead": "Integrate financial capabilities into your own applications.",
-     "body": "Rays APIs and middleware expose accounts, payments, collections, wallets and financing to approved partners, with the controls financial transactions require.",
-     "features": [
-      {
-       "title": "Transaction integrity",
-       "text": "Designed for idempotent, auditable financial operations."
-      },
-      {
-       "title": "Operational controls",
-       "text": "Limits, approvals and monitoring built in."
-      }
-     ],
-     "cta": {
-      "label": "Request API access",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "white-label",
-     "title": "White label",
-     "lead": "Your brand. Rays infrastructure.",
-     "body": "Deploy financial products under your own brand while Rays runs the technology underneath, from wallets to merchant services.",
-     "features": [
-      {
-       "title": "Your institution",
-       "text": "You own the relationship and the product."
-      },
-      {
-       "title": "Your customers",
-       "text": "Serve them in your name, on your terms."
-      },
-      {
-       "title": "Rays infrastructure",
-       "text": "Proven platforms, operated for you."
-      }
-     ],
-     "cta": {
-      "label": "Partner with Rays",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "institutions",
-     "title": "Financial institutions",
-     "lead": "Extend your capabilities without building everything yourself.",
-     "body": "Whether you need a digital wallet, payment infrastructure, merchant services or other digital capabilities, Rays provides the technology layer behind your service through white-label platforms, licensing, connectivity and technology services.",
-     "cta": {
-      "label": "Partner with Rays",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "developers",
-     "title": "Developers",
-     "lead": "Build financial products on infrastructure that already exists.",
-     "body": "A financial product needs more than an app: accounts, transactions, payments, settlement, connectivity and controls. Rays provides that layer so you can focus on your product and customers.",
-     "steps": [
-      {
-       "title": "Build",
-       "text": "Integrate through APIs and supported interfaces."
-      },
-      {
-       "title": "Connect",
-       "text": "Access Rays' financial ecosystem and connected services."
-      },
-      {
-       "title": "Launch",
-       "text": "Go to market without rebuilding every financial capability."
-      },
-      {
-       "title": "Scale",
-       "text": "Run on infrastructure designed for real transactions."
-      }
-     ],
-     "cta": {
-      "label": "Talk to our infrastructure team",
-      "href": "#/about/contact"
-     }
-    }
-   ]
-  },
-  {
-   "id": "platforms",
-   "title": "Platforms",
-   "intro": "Platforms we build and operate in-house.",
-   "pages": [
-    {
-     "id": "sahaypay",
-     "title": "SahayPay",
-     "lead": "One wallet. One profile. Everyday financial services.",
-     "body": "SahayPay is Rays' telco-agnostic digital wallet. Customers, agents and merchants use the same connected ecosystem through the SahayPay app and USSD.\n\nRays also licenses SahayPay to other financial institutions as a white-label wallet. It currently powers deployments serving 5 million+ registered customers.",
-     "features": [
-      {
-       "title": "Send money",
-       "text": "Transfer between customers and connected accounts."
-      },
-      {
-       "title": "Buy goods",
-       "text": "Pay merchants digitally."
-      },
-      {
-       "title": "Cash in and cash out",
-       "text": "Through supported agents and channels."
-      },
-      {
-       "title": "Airtime",
-       "text": "Top up directly from your wallet."
-      },
-      {
-       "title": "Bills and utilities",
-       "text": "Pay supported services digitally."
-      },
-      {
-       "title": "App and USSD",
-       "text": "Works on smartphones and basic phones, across networks."
-      }
-     ],
-     "cta": {
-      "label": "Power your wallet with SahayPay",
-      "href": "#/infrastructure/white-label"
-     }
-    },
-    {
-     "id": "qpay",
-     "title": "QPay",
-     "lead": "Collect money. Make payments. Settle instantly.",
-     "body": "QPay is Rays' merchant collection and business payment platform, for merchants, businesses, institutions and organisations that need a reliable digital layer for receiving and sending money.",
-     "features": [
-      {
-       "title": "Collect",
-       "text": "Open a merchant account and accept QR and digital payments."
-      },
-      {
-       "title": "Pay",
-       "text": "Make payments directly from your QPay account."
-      },
-      {
-       "title": "Settle",
-       "text": "Move collected funds through connected infrastructure."
-      },
-      {
-       "title": "Bulk payments",
-       "text": "Pay many recipients efficiently."
-      },
-      {
-       "title": "Salaries",
-       "text": "Digital staff disbursements."
-      },
-      {
-       "title": "Supplier payments",
-       "text": "Pay suppliers with a clear transaction trail."
-      },
-      {
-       "title": "Petty cash",
-       "text": "Operational payments without physical cash."
-      },
-      {
-       "title": "Push payments",
-       "text": "Initiate payments through supported channels."
-      }
-     ],
-     "cta": {
-      "label": "Start with QPay",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "emurabaha",
-     "title": "eMurabaha",
-     "ref": "financing/emurabaha"
     },
     {
      "id": "finsharia",
-     "title": "FinSharia",
-     "lead": "Our in-house ethical core banking platform.",
-     "body": "FinSharia provides the financial ledger and core operational foundation behind every Rays service. Because we develop and operate it ourselves, the core evolves alongside our products.",
+     "title": "FinSharia core banking",
+     "lead": "Our in-house ethical core banking platform: ledger, accounts, financing structures, controls and reporting.",
+     "body": "Because we build it ourselves, the core evolves with our products.",
      "list": [
       "Customer management",
       "Accounts and transactions",
@@ -783,12 +433,13 @@
   {
    "id": "about",
    "title": "About",
+   "nav": false,
    "intro": "Building financial infrastructure for growth.",
    "pages": [
     {
      "id": "story",
      "title": "Our story",
-     "lead": "Where opportunity begins.",
+     "lead": "Established in 2014 to expand access to finance, and to build the technology to deliver it.",
      "body": "Rays is a Somali word for earth made wet by rain: the transformation of dry ground when rain arrives and creates the conditions for new growth.\n\nRays Microfinance was established in 2014 with a simple objective: expand access to financial services while building the technology required to deliver them. Today we serve individuals, groups, NGOs, businesses and MSMEs directly, and provide technology and infrastructure to other financial institutions and fintechs.",
      "features": [
       {
@@ -818,52 +469,6 @@
      ]
     },
     {
-     "id": "infrastructure",
-     "title": "Infrastructure",
-     "lead": "Built for reliability. Designed for connection.",
-     "body": "Financial infrastructure has to do more than look modern. It has to be reliable, secure, auditable and capable of handling real financial transactions.",
-     "features": [
-      {
-       "title": "Security",
-       "text": "Protecting financial data, identities and transactions."
-      },
-      {
-       "title": "Reliability",
-       "text": "Designed for continuous financial operations."
-      },
-      {
-       "title": "Connectivity",
-       "text": "Linking institutions, payment networks and channels."
-      },
-      {
-       "title": "Scalability",
-       "text": "Ready for growing volumes and customer bases."
-      },
-      {
-       "title": "Control",
-       "text": "Strong operational, financial and audit controls."
-      },
-      {
-       "title": "Integration",
-       "text": "APIs and middleware that let systems work together."
-      }
-     ]
-    },
-    {
-     "id": "regulatory",
-     "title": "Regulatory",
-     "lead": "A regulated financial institution.",
-     "body": "Rays operates as a regulated microfinance institution in Ethiopia. Our services are supported by national financial infrastructure, settlement capabilities, payment connectivity and internally developed technology platforms.\n\nWe work within the applicable regulatory framework and maintain the operational, financial and technology controls our customers and institutional partners rely on."
-    },
-    {
-     "id": "careers",
-     "title": "Careers",
-     "lead": "Build the infrastructure behind financial services.",
-     "body": "We build financial technology in Ethiopia, from the core banking layer to digital wallets, payments, financing and connectivity. If you want to work where software meets real financial infrastructure, we'd like to hear from you.\n\nWe also hire across branch operations, finance, risk, compliance and customer service.",
-     "cta": null,
-     "kind": "careers"
-    },
-    {
      "id": "help",
      "title": "Help and FAQs",
      "kind": "faq",
@@ -878,11 +483,25 @@
      "body": "Rays serves customers through 40+ branches and 4,000+ agents across Ethiopia."
     },
     {
+     "id": "careers",
+     "title": "Careers",
+     "lead": "Build the infrastructure behind financial services.",
+     "body": "We build financial technology in Ethiopia, from the core banking layer to digital wallets, payments, financing and connectivity. If you want to work where software meets real financial infrastructure, we'd like to hear from you.\n\nWe also hire across branch operations, finance, risk, compliance and customer service.",
+     "cta": null,
+     "kind": "careers"
+    },
+    {
      "id": "downloads",
      "title": "Downloads",
      "kind": "downloads",
      "lead": "Forms, tariffs, reports and brochures.",
      "body": ""
+    },
+    {
+     "id": "regulatory",
+     "title": "Regulatory",
+     "lead": "A regulated financial institution.",
+     "body": "Rays operates as a regulated microfinance institution in Ethiopia. Our services are supported by national financial infrastructure, settlement capabilities, payment connectivity and internally developed technology platforms.\n\nWe work within the applicable regulatory framework and maintain the operational, financial and technology controls our customers and institutional partners rely on."
     },
     {
      "id": "contact",
@@ -983,6 +602,11 @@
    "category": "Business"
   },
   {
+   "q": "How do I report fraud or a suspicious transaction?",
+   "a": "Contact us straight away by phone, the contact form or at any branch, and tell us what happened. If you shared your PIN or code, or lost your phone, say so, so we can protect your account. Rays will never ask for your PIN, password or one-time code.",
+   "category": "Security"
+  },
+  {
    "q": "Someone asked me for my PIN or code. What should I do?",
    "a": "Never share your PIN, password or one-time code with anyone, including people who say they are from Rays. Rays staff will never ask for them. Contact us immediately and read our security and fraud guidance.",
    "category": "Security"
@@ -994,7 +618,7 @@
   },
   {
    "q": "Can my institution use SahayPay or Rays infrastructure?",
-   "a": "Yes. Rays offers white-label wallets, payment infrastructure, APIs and connectivity to financial institutions and fintechs. Talk to our infrastructure team through the contact page.",
+   "a": "Yes. Rays offers white-label wallets, payment infrastructure, APIs and connectivity to banks, microfinance institutions and fintechs. Contact our infrastructure team.",
    "category": "Partners"
   }
  ],
@@ -1006,7 +630,7 @@
    "updated": "2026-09-21",
    "published": true,
    "reviewed": false,
-   "body": "Rays Microfinance Institution S.C. (\"Rays\", \"we\", \"us\") respects your privacy. This policy explains how we handle personal data when you use our website, digital channels (including SahayPay, QPay and eMurabaha), branches and agents, and when you apply for a job with us.\n\nWe process personal data in line with the Personal Data Protection Proclamation of Ethiopia and the directives of the National Bank of Ethiopia that apply to us.\n\n## Who is responsible for your data\nRays Microfinance Institution S.C., [registered address], Addis Ababa, Ethiopia, is the controller of your personal data. You can contact our data protection officer at [privacy email] or at any branch.\n\n## What we collect\n- Identity and contact details: name, date of birth, national ID or other identification, photo, phone number, email and address\n- Account and transaction information: account numbers, balances, payments, transfers and financing records\n- Know-your-customer and risk information we're required to collect by law, including information from verification and credit-reference sources\n- Device and usage information when you use our digital channels, such as device identifiers, IP address and app activity\n- Information you give us when you contact us, make a complaint or apply for a job, including CVs\n- Business information for merchant, MSME and institutional customers\n\n## Why we use it\n- To open and run your accounts and provide the services you ask for\n- To assess eligibility and manage financing, including scoring and verification\n- To meet legal and regulatory duties, including anti-money-laundering, counter-terrorist-financing, sanctions screening and reporting to regulators\n- To prevent and detect fraud and keep our services secure\n- To respond to your enquiries and complaints\n- To improve our products and services\n- To send service messages, and marketing only where you have agreed or the law allows\n\nWe rely on one or more of these grounds: performing a contract with you, complying with the law, our legitimate interests (such as fraud prevention and service improvement), and your consent where it's required.\n\n## Who we share it with\nWe share personal data only where needed, with:\n- Regulators, law enforcement and other authorities where the law requires it\n- Payment networks and partners that process your transactions, such as EthSwitch, banks and mobile money providers\n- Credit-reference and identity-verification services\n- Service providers who work for us under contract, such as IT, hosting, messaging and card-production providers\n- Financial institutions that use Rays infrastructure, where you are their customer\n\nWe don't sell your personal data.\n\n## Transfers outside Ethiopia\nSome of our service providers may store or process data outside Ethiopia. Where that happens, we put safeguards in place as required by law.\n\n## How long we keep it\nWe keep personal data for as long as your relationship with us lasts, and afterwards for the period the law requires, generally [number] years for account and transaction records. Job applications are kept for [number] months unless you ask us to keep them longer.\n\n## Your rights\nSubject to the law, you can ask us to:\n- Give you access to your personal data\n- Correct inaccurate data\n- Delete data we no longer need\n- Restrict or object to certain processing\n- Withdraw consent you've given, without affecting earlier processing\n\nTo make a request, contact us at [privacy email] or visit a branch. If you're not satisfied with our response, you can complain to the Ethiopian data protection authority.\n\n## Security\nWe protect personal data with technical and organisational measures, including access controls, encryption, monitoring and staff training.\n\n## Changes\nWe may update this policy. We'll post the new version here with its date, and tell you directly about significant changes."
+   "body": "Rays Microfinance Institution S.C. (\"Rays\", \"we\", \"us\") respects your privacy. This policy explains how we handle personal data when you use our website, digital channels (including SahayPay, QPay and eMurabaha), branches and agents, and when you apply for a job with us.\n\nWe process personal data in line with the Personal Data Protection Proclamation of Ethiopia and the directives of the National Bank of Ethiopia that apply to us.\n\n## Who is responsible for your data\nRays Microfinance Institution S.C., [registered address], Addis Ababa, Ethiopia, is the controller of your personal data. You can contact our data protection officer at [privacy email] or at any branch.\n\n## What we collect\n- Identity and contact details: name, date of birth, national ID or other identification, photo, phone number, email and address\n- Account and transaction information: account numbers, balances, payments, transfers and financing records\n- Know-your-customer and risk information we're required to collect by law, including information from verification and credit-reference sources\n- Device and usage information when you use our digital channels, such as device identifiers, IP address and app activity\n- Information you give us when you contact us, make a complaint or apply for a job, including CVs\n- Business information for merchant, MSME and institutional customers\n\n## Why we use it\n- To open and run your accounts and provide the services you ask for\n- To assess eligibility and manage financing, including scoring and verification\n- To meet legal and regulatory duties, including anti-money-laundering, counter-terrorist-financing, sanctions screening and reporting to regulators\n- To prevent and detect fraud and keep our services secure\n- To respond to your enquiries and complaints\n- To improve our products and services\n- To send service messages, and marketing only where you have agreed or the law allows\n\nWe rely on one or more of these grounds: performing a contract with you, complying with the law, our legitimate interests (such as fraud prevention and service improvement), and your consent where it's required.\n\n## Questions you ask on our website\nIf you use Ask Rays, we send your question and relevant parts of our public website to an AI service provider to write the answer. Please don't include personal details such as account numbers, PINs or ID numbers. We keep questions for up to 90 days, with long numbers removed, to improve our answers.\n\n## Website statistics\nWe count page visits, searches and button clicks to understand what visitors need. We don't use cookies for this, don't store your IP address, and can't identify you from these statistics.\n\n## Who we share it with\nWe share personal data only where needed, with:\n- Regulators, law enforcement and other authorities where the law requires it\n- Payment networks and partners that process your transactions, such as EthSwitch, banks and mobile money providers\n- Credit-reference and identity-verification services\n- Service providers who work for us under contract, such as IT, hosting, messaging and card-production providers\n- Financial institutions that use Rays infrastructure, where you are their customer\n\nWe don't sell your personal data.\n\n## Transfers outside Ethiopia\nSome of our service providers may store or process data outside Ethiopia. Where that happens, we put safeguards in place as required by law.\n\n## How long we keep it\nWe keep personal data for as long as your relationship with us lasts, and afterwards for the period the law requires, generally [number] years for account and transaction records. Job applications are kept for [number] months unless you ask us to keep them longer.\n\n## Your rights\nSubject to the law, you can ask us to:\n- Give you access to your personal data\n- Correct inaccurate data\n- Delete data we no longer need\n- Restrict or object to certain processing\n- Withdraw consent you've given, without affecting earlier processing\n\nTo make a request, contact us at [privacy email] or visit a branch. If you're not satisfied with our response, you can complain to the Ethiopian data protection authority.\n\n## Security\nWe protect personal data with technical and organisational measures, including access controls, encryption, monitoring and staff training.\n\n## Changes\nWe may update this policy. We'll post the new version here with its date, and tell you directly about significant changes."
   },
   {
    "id": "terms",
@@ -1024,7 +648,7 @@
    "updated": "2026-09-21",
    "published": true,
    "reviewed": false,
-   "body": "This website doesn't use advertising or tracking cookies.\n\n## What we store\n- **Page content cache.** A copy of the public website content is kept in your browser's local storage so pages open faster on your next visit. It contains no personal data.\n- **Portal sign-in.** If you're a Rays website editor, your sign-in session is kept in local storage so you stay signed in.\n\nThese are strictly necessary for the website to work as you'd expect, so we don't ask for consent to use them.\n\n## Analytics\nIf we add privacy-friendly analytics in future, we'll update this page first and ask for consent where it's required.\n\n## Removing stored data\nYou can clear this website's data at any time in your browser settings."
+   "body": "This website doesn't use advertising or tracking cookies.\n\n## What we store\n- **Page content cache.** A copy of the public website content is kept in your browser's local storage so pages open faster on your next visit. It contains no personal data.\n- **Portal sign-in.** If you're a Rays website editor, your sign-in session is kept in local storage so you stay signed in.\n\nThese are strictly necessary for the website to work as you'd expect, so we don't ask for consent to use them.\n\n## Statistics without cookies\nWe count visits, searches and clicks without cookies and without storing your IP address. A daily, one-way code lets us count unique visitors for that day only; it can't be linked back to you or across days. If your browser sends a \"Do Not Track\" signal, we don't count you at all.\n\n## Removing stored data\nYou can clear this website's data at any time in your browser settings."
   },
   {
    "id": "complaints",

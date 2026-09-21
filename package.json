@@ -5,9 +5,12 @@
   "description": "Rays Microfinance website and content portal",
   "scripts": {
     "build": "node build.mjs",
-    "preview": "node build.mjs && npx --yes serve dist -s"
+    "preview": "node build.mjs && npx --yes serve dist -s",
+    "sql:all": "node -e \"const fs=require('fs');const d='supabase/migrations/';fs.writeFileSync('supabase/setup-all.sql',fs.readdirSync(d).sort().map(f=>'-- '+f+'\\n'+fs.readFileSync(d+f,'utf8')).join('\\n\\n'))\""
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "esbuild": "0.23.1"
   }

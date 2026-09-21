@@ -1,6 +1,7 @@
 "use strict";
 /* Rays portal. Loaded on demand from app.js when someone opens /admin. */
-const { CFG, S, LS, $, esc, clone, uid, slug, blobUrl, toast, nav, route, curPath, render, findPage, KINDS, site, logoImg, SB_URL, toPaths, fmtDate, canRerender, header } = window.Rays;
+const { CFG, S, LS, $, esc, clone, uid, slug, blobUrl, toast, nav, route, curPath, render, findPage, KINDS, site, logoImg, SB_URL, toPaths, fmtDate, canRerender, header, mountTurnstile, tsToken, tsReset, tsBox } = window.Rays;
+const IDLE_MINUTES = 30;
 
 const fmtSize = b => b>1048576 ? (b/1048576).toFixed(1)+" MB" : Math.round((b||0)/1024)+" KB";
 let ready=null;
@@ -27,9 +28,15 @@ async function init(){
     db.doc("inbox/state").onSnapshot(sn=>{ const d=sn.exists?sn.data():{}; st={handled:d.handled||{},deleted:d.deleted||{}}; S.inbox=st; merge(); }, ()=>{});
   }
 }
+/* Editors must be listed in public.admins AND have passed two-factor authentication (aal2).
+   The database enforces the same rule (supabase/security.sql), so this check is for the interface only. */
 async function setSession(session){
-  S.session=session||null; S.canEdit=false;
-  if(session){ const { data } = await S.sb.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle(); S.canEdit=!!data; }
+  S.session=session||null; S.canEdit=false; S.isListed=false; S.aal=null;
+  if(session){
+    const { data } = await S.sb.from("admins").select("user_id").eq("user_id",session.user.id).maybeSingle();
+    S.isListed=!!data;
+    if(S.isListed){ const { data:a } = await S.sb.auth.mfa.getAuthenticatorAssuranceLevel(); S.aal=a?.currentLevel||"aal1"; S.canEdit = S.aal==="aal2"; }
+  }
   S.maybeEditor=!!session;
 }
 async function sbLoad(){
@@ -42,6 +49,8 @@ async function sbLoad(){
     sb.from("inquiries").select("*").order("created_at",{ascending:false}),
     sb.from("applications").select("*").order("created_at",{ascending:false})
   ]);
+  const audit = await sb.from("audit_log").select("*").order("at",{ascending:false}).limit(150);
+  S.audit = audit.error ? null : (audit.data||[]);
   S.applications = (apps.data||[]).map(a=>({id:a.id,jobId:a.job_id,jobTitle:a.job_title,name:a.name,email:a.email,phone:a.phone,message:a.message,cvPath:a.cv_path,cvName:a.cv_name,cvLink:a.cv_link,status:a.status,createdAt:a.created_at}));
   if(!S.dirty) S.site = siteR.data?.data || null;
   S.posts = (posts.data||[]).map(r=>({...(r.data||{}), id:r.id, published:r.published, date:r.date}));
@@ -149,14 +158,14 @@ function shell(active,inner){
   const note = S.mode==="local" ? `<p class="note">Preview mode: changes are saved in this browser only. Add your Supabase keys to share content with your team.</p>` : "";
   return `<div class="admin"><aside>
     <a class="logo" href="#/">${logoImg(true)}</a>
-    ${item("#/admin","Overview")}
+    ${item("#/admin","Overview")}${item("#/admin/insights","Insights")}
     <div class="grp">Website</div>${item("#/admin/home","Home page")}${item("#/admin/stats","Figures")}${item("#/admin/settings","Brand, contact and links")}${item("#/admin/faqs","Help and FAQs")}${item("#/admin/branches","Branches and agents")}${item("#/admin/downloads","Downloads")}${item("#/admin/calculator","Financing calculator")}${item("#/admin/policies","Policies")}
     <div class="grp">Pages</div>${secs.map(s=>item("#/admin/pages/"+s.id,s.title)).join("")}
     <div class="grp">Careers</div>${item("#/admin/jobs","Jobs")}${item("#/admin/applications","Applications"+(newApps?` (${newApps})`:""))}
     <div class="grp">Media</div>${item("#/admin/posts","Posts")}${item("#/admin/media","Library")}
     <div class="grp">Inbox</div>${item("#/admin/inquiries","Enquiries"+(open?` (${open})`:""))}
     <div class="grp">&nbsp;</div><a href="#/">View website</a>
-    ${S.mode==="supabase"?`<button class="linklike" data-act="signout">Sign out</button>`:""}
+    ${S.mode==="supabase"?`<div class="grp">Security</div>${item("#/admin/activity","Activity log")}<button class="linklike" data-act="signout">Sign out</button>`:""}
   </aside><main id="adminmain">${note}${inner}</main></div>
   <div class="savebar${S.dirty?" show":""}" id="savebar"><span>You have unsaved changes to the website.</span><button class="btn ghost-light small" data-act="discard">Discard</button><button class="btn yellow small" data-act="save-site">Save changes</button></div>`;
 }
@@ -184,14 +193,15 @@ function vOverview(){
 }
 function vHome(){
   const d=ensureDraft(); d.home=d.home||{};
-  return shell("#/admin/home",`<h1>Home page</h1>
-    <div class="panel"><h2>Hero</h2>${fld("brand.motto","Headline (each sentence becomes a line)",d.brand?.motto)}${fld("home.lead","Introduction",d.home.lead,"area")}${fld("brand.meaning","Caption under the curve",d.brand?.meaning)}</div>
-    <div class="panel"><h2>Story</h2>${fld("home.storyText","Story text",d.home.storyText,"area","Leave a blank line between paragraphs. Start lines with - for a bullet list.")}</div>
-    <div class="panel"><h2>Three capabilities</h2>${pairList("home.capabilities",d.home.capabilities,"Title","Description","Add capability",true)}</div>
-    <div class="panel"><h2>Connectivity</h2>${fld("home.connectivityTitle","Heading",d.home.connectivityTitle)}${fld("home.connectivityText","Text",d.home.connectivityText,"area")}${linesFld("home.connectivity","Connected institutions",d.home.connectivity)}</div>
-    <div class="panel"><h2>SahayPay spotlight</h2>${fld("home.walletTitle","Heading",d.home.walletTitle)}${fld("home.walletText","Text",d.home.walletText,"area")}</div>
-    <div class="panel"><h2>Built in-house</h2>${fld("home.inhouseTitle","Heading",d.home.inhouseTitle)}${fld("home.inhouseText","Text",d.home.inhouseText,"area")}${linesFld("home.inhouseList","Platforms we build",d.home.inhouseList)}</div>`);
+  const icons=[["account","Account"],["finance","Financing"],["wallet","Wallet"],["qr","QR / payments"],["pin","Location"],["help","Help"],["arrow","Arrow"]];
+  return shell("#/admin/home",`<h1>Home page</h1><p class="muted">Keep it short: visitors should find what they need without scrolling.</p>
+    <div class="panel"><h2>Top of the page</h2>${fld("brand.motto","Headline (each sentence becomes a line)",d.brand?.motto)}${fld("home.lead","One-sentence introduction",d.home.lead,"area")}${fld("brand.meaning","Caption beside the curve",d.brand?.meaning)}</div>
+    <div class="panel"><h2>Ask Rays</h2>${fld("home.askPlaceholder","Placeholder text in the ask box",d.home.askPlaceholder)}${linesFld("home.suggestions","Suggested questions (up to 4; phones show 2)",d.home.suggestions,"One question per line. Pick the questions people ask most — Insights shows you which.")}</div>
+    <div class="panel"><h2>"I want to…" shortcuts</h2><p class="muted small">Six works best. They appear right under the ask box.</p>
+      ${objList("home.tasks",d.home.tasks,[{k:"title",label:"Label"},{k:"text",label:"Short hint"},{k:"href",label:"Link",ph:"/personal/accounts"},{k:"icon",label:"Icon",type:"select",options:icons}],"Add shortcut",{title:"",text:"",href:"",icon:"arrow"})}</div>
+    <div class="panel"><h2>Three things we do</h2>${pairList("home.capabilities",d.home.capabilities,"Title","One sentence","Add item",true)}</div>`);
 }
+
 function vStats(){
   const d=ensureDraft(); d.stats=d.stats||[];
   return shell("#/admin/stats",`<h1>Figures</h1><p class="muted">Shown on the home page under "Built for Ethiopia's financial ecosystem".</p>
@@ -210,13 +220,16 @@ function vSettings(){
       ${fld("announcement.text","Message",d.announcement?.text)}${fld("announcement.link","Link (optional)",d.announcement?.link,"text","e.g. /media/post/…")}</div>
     <div class="panel"><h2>Social media</h2><div class="formgrid">${["facebook","telegram","linkedin","x","youtube","tiktok","instagram"].map(k=>fld("social."+k,{facebook:"Facebook",telegram:"Telegram channel",linkedin:"LinkedIn",x:"X",youtube:"YouTube",tiktok:"TikTok",instagram:"Instagram"}[k],d.social?.[k],"text","Full link")).join("")}</div></div>
     <div class="panel"><h2>App download links</h2><div class="formgrid">${fld("apps.android","SahayPay on Google Play",d.apps?.android)}${fld("apps.ios","SahayPay on the App Store",d.apps?.ios)}</div></div>
-    <div class="panel"><h2>Languages in footer</h2>${linesFld("languages","Languages",d.languages)}</div>`);
+    <div class="panel"><h2>Languages in footer</h2>${linesFld("languages","Languages",d.languages)}</div>
+    <div class="panel"><h2>Starter content</h2><p class="muted small">Replace the pages, home page, FAQs and policies with the latest starter version. Contact details, social links, branches, downloads and jobs you've entered are kept.</p><button class="btn small danger" data-act="reset-starter">Load latest starter content</button></div>`);
 }
 function vSection(secId,pageId){
   const d=ensureDraft(); const si=d.sections.findIndex(s=>s.id===secId); if(si<0) return shell("",`<h1>Section not found</h1>`);
   const sec=d.sections[si]; const pi = pageId ? sec.pages.findIndex(p=>p.id===pageId) : -1; const base=`sections.${si}`;
   let inner = `<h1>${esc(sec.title)}</h1>
-    <div class="panel"><h2>Section</h2><div class="formgrid">${fld(base+".title","Menu name",sec.title)}${fld(base+".intro","Short introduction",sec.intro)}</div></div>
+    <div class="panel"><h2>Section</h2><div class="formgrid">${fld(base+".title","Menu name",sec.title)}${fld(base+".intro","One-line summary",sec.intro)}</div>
+      <label class="check"><input type="checkbox" data-bind="${base}.nav" ${sec.nav!==false?"checked":""}> Show in the main menu <span class="muted small">(keep the menu to 4 or 5 items; others go in the footer)</span></label>
+      <p class="muted small">Live at <a href="#/${esc(sec.id)}">/${esc(sec.id)}</a>: one page showing every product in this section.</p></div>
     <div class="panel"><h2>Pages in this section</h2><div class="tablewrap"><table class="list"><thead><tr><th>Page</th><th>Address</th><th></th></tr></thead><tbody>
     ${sec.pages.map((p,i)=>`<tr><td><a href="#/admin/pages/${esc(sec.id)}/${esc(p.id)}">${esc(p.title)}</a>${p.ref?` <span class="pill">Linked to ${esc(p.ref)}</span>`:""}</td><td class="muted">/${esc(sec.id)}/${esc(p.id)}</td>
       <td style="white-space:nowrap">${i>0?`<button class="iconbtn" data-act="move" data-si="${si}" data-i="${i}" data-dir="-1" aria-label="Move up">Up</button>`:""} ${i<sec.pages.length-1?`<button class="iconbtn" data-act="move" data-si="${si}" data-i="${i}" data-dir="1" aria-label="Move down">Down</button>`:""} <button class="iconbtn" data-act="rm" data-path="${base}.pages" data-i="${i}">Remove</button></td></tr>`).join("")}
@@ -304,9 +317,81 @@ function vLogin(){
     <p class="muted" style="font-size:15px">For Rays website editors.</p>
     <label class="f"><span>Email</span><input type="email" name="email" required autocomplete="username"></label>
     <label class="f"><span>Password</span><input type="password" name="password" required autocomplete="current-password"></label>
+    ${tsBox("login")}
     <p id="loginmsg" role="status" class="muted"></p>
     <button class="btn block-btn" type="submit">Sign in</button>
+    <p class="muted small" style="margin-top:12px">Forgotten your password or lost your authenticator? Ask another administrator to reset your account in Supabase.</p>
     <p style="margin-top:14px;font-size:15px"><a href="#/">Back to the website</a></p></form></div>`;
+}
+
+async function renderMfa(app){
+  app.innerHTML=`<div class="loading">Checking your sign-in…</div>`;
+  const { data:f, error } = await S.sb.auth.mfa.listFactors();
+  if(error){ app.innerHTML=`<div class="loading">Two-factor authentication couldn't be checked. Refresh the page to try again.</div>`; return; }
+  const verified=(f.totp||[]).find(x=>x.status==="verified");
+  if(verified){
+    app.innerHTML=toPaths(`<div class="login"><form class="panel" id="mfaform" data-factor="${esc(verified.id)}">${logoImg(true)}<h1>Enter your code</h1>
+      <p class="muted" style="font-size:15px">Open your authenticator app and enter the 6-digit code for Rays portal.</p>
+      <label class="f"><span>Code</span><input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus class="otp"></label>
+      <p id="mfamsg" role="status" class="muted"></p><button class="btn block-btn" type="submit">Verify</button>
+      <p style="margin-top:14px"><button type="button" class="linklike2" data-act="signout">Sign out</button></p></form></div>`);
+  } else {
+    for(const x of (f.all||[]).filter(x=>x.status!=="verified")){ try{ await S.sb.auth.mfa.unenroll({factorId:x.id}); }catch(e){} }
+    const { data:en, error:e2 } = await S.sb.auth.mfa.enroll({ factorType:"totp", friendlyName:"Rays portal "+new Date().toISOString().slice(0,10) });
+    if(e2){ app.innerHTML=`<div class="loading">Two-factor setup couldn't start: ${esc(e2.message)}. In Supabase, make sure TOTP is enabled under Authentication → Multi-factor.</div>`; return; }
+    app.innerHTML=toPaths(`<div class="login"><form class="panel" id="mfaform" data-factor="${esc(en.id)}">${logoImg(true)}<h1>Set up two-factor sign-in</h1>
+      <p class="muted" style="font-size:15px">Editors need a second step to sign in. Scan this code with an authenticator app such as Google Authenticator, Microsoft Authenticator or Authy.</p>
+      <img src="${esc(en.totp.qr_code)}" alt="QR code for your authenticator app" width="200" height="200" class="qr">
+      <p class="muted small">Can't scan it? Enter this key in the app: <code class="secret">${esc(en.totp.secret)}</code></p>
+      <label class="f"><span>6-digit code from the app</span><input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required class="otp"></label>
+      <p id="mfamsg" role="status" class="muted"></p><button class="btn block-btn" type="submit">Turn on and continue</button></form></div>`);
+  }
+  $("#mfaform").addEventListener("submit", submitMfa);
+}
+async function submitMfa(e){
+  e.preventDefault(); const f=e.target, code=String(new FormData(f).get("code")||"").replace(/\D/g,""), msg=$("#mfamsg"), btn=f.querySelector("button[type=submit]");
+  if(code.length!==6){ msg.textContent="Enter the 6-digit code."; return; }
+  btn.disabled=true; msg.textContent="Checking…";
+  const { error } = await S.sb.auth.mfa.challengeAndVerify({ factorId:f.dataset.factor, code });
+  if(error){ btn.disabled=false; msg.textContent= /invalid|expired/i.test(error.message) ? "That code didn't work. Wait for a new code and try again." : "Verification failed: "+error.message; return; }
+  const { data:{ session } } = await S.sb.auth.getSession();
+  await setSession(session); await sbLoad(); toast("Signed in"); render(false);
+}
+
+/* ================= insights (cookieless analytics) ================= */
+async function vInsightsAsync(app, days){
+  app.innerHTML=toPaths(shell("#/admin/insights",`<h1>Insights</h1><div class="loading" style="min-height:30vh">Loading…</div>`));
+  let d=null, err=null;
+  if(S.mode==="supabase"){ const r=await S.sb.rpc("insights",{p_days:days}); d=r.data; err=r.error; }
+  const main=$("#adminmain"); if(!main) return;
+  if(err || !d){ main.innerHTML=`<h1>Insights</h1><div class="empty">${S.mode==="supabase"?"Insights aren't set up yet. Deploy the database updates and the <code>track</code> function (see README → One-folder deploy).":"Insights are available once the site is connected to Supabase."}</div>`; return; }
+  const bars=(rows,key="n")=>{ const max=Math.max(1,...rows.map(r=>r[key])); return rows.length?`<div class="bars">${rows.map(r=>`<div class="bar-row"><div class="lbl"><i style="width:${(r[key]/max*100).toFixed(1)}%"></i><span>${esc(r.label||"(none)")}</span></div><b>${r[key]}</b></div>`).join("")}</div>`:`<p class="muted">No data yet.</p>`; };
+  const maxDay=Math.max(1,...(d.by_day||[]).map(x=>x.pv));
+  main.innerHTML=toPaths(`<div class="rowhead"><h1>Insights</h1><div class="btnrow">${[7,30,90].map(n=>`<button class="btn small ${n===days?"":"ghost"}" data-act="insights" data-days="${n}">${n} days</button>`).join("")}</div></div>
+    <p class="muted">What visitors do on the site. No cookies and no IP addresses: visitors are counted with a one-way code that changes every day.</p>
+    <div class="kpis" style="margin-top:18px"><div><b>${d.visitors||0}</b><span>Visitors</span></div><div><b>${d.pageviews||0}</b><span>Page views</span></div><div><b>${d.questions||0}</b><span>Questions asked</span></div><div><b>${d.forms||0}</b><span>Forms sent</span></div></div>
+    <div class="panel"><h2>Page views per day</h2><div class="spark" aria-hidden="true">${(d.by_day||[]).map(x=>`<i style="height:${(x.pv/maxDay*100).toFixed(1)}%" title="${esc(x.day)}: ${x.pv}"></i>`).join("")}</div></div>
+    <div class="formgrid" style="gap:0 20px">
+      <div class="panel"><h2>Top pages</h2>${bars(d.top_pages||[])}</div>
+      <div class="panel"><h2>What people click</h2>${bars(d.top_clicks||[])}</div>
+      <div class="panel"><h2>What people ask and search</h2>${bars(d.top_questions||[])}</div>
+      <div class="panel"><h2>Questions we couldn't answer</h2><p class="muted small">Add these to Help and FAQs or improve the page content.</p>${bars(d.unanswered||[])}</div>
+      <div class="panel"><h2>Answer feedback</h2>${bars(d.feedback||[])}</div>
+      <div class="panel"><h2>Where visitors come from</h2>${bars(d.referrers||[])}</div>
+      <div class="panel"><h2>Devices</h2>${bars(d.devices||[])}</div>
+      <div class="panel"><h2>Pages not found</h2>${bars(d.not_found||[])}</div>
+    </div>`);
+}
+
+/* ================= activity log ================= */
+function vActivity(){
+  if(S.audit===null) return shell("#/admin/activity",`<h1>Activity log</h1><div class="empty">The activity log isn't set up yet. Run <code>supabase/security.sql</code> in the Supabase SQL editor.</div>`);
+  const T={site:"Website content",posts:"Post",media:"Media file",applications:"Application",inquiries:"Enquiry"};
+  const A={INSERT:"added",UPDATE:"changed",DELETE:"deleted"};
+  return shell("#/admin/activity",`<h1>Activity log</h1><p class="muted">Every change made through the portal, newest first. Entries can't be edited or deleted from the portal.</p>
+    ${S.audit.length?`<div class="panel tablewrap"><table class="list"><thead><tr><th>When</th><th>Who</th><th>What</th></tr></thead><tbody>
+    ${S.audit.map(a=>`<tr><td class="muted" style="white-space:nowrap">${esc(new Date(a.at).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"}))}</td><td>${esc(a.actor_email||"System")}</td><td>${esc(T[a.table_name]||a.table_name)} ${esc(A[a.action]||a.action)}${a.record_id&&a.table_name!=="site"?` <span class="muted small">(${esc(String(a.record_id).slice(0,40))})</span>`:""}</td></tr>`).join("")}
+    </tbody></table></div>`:`<div class="empty">No changes recorded yet.</div>`}`);
 }
 
 /* ================= portal: policies, careers, help, branches, downloads, calculator ================= */
@@ -407,7 +492,8 @@ function vApplications(){
 function renderAdmin(app,r,scrollTop){
   if(!ready){ app.innerHTML=`<div class="loading">Opening the portal…</div>`; ready=init().then(()=>render(scrollTop)).catch(e=>{ console.error(e); app.innerHTML=`<div class="loading">The portal couldn't connect. Check your connection and refresh.</div>`; }); return; }
   if(!S.canEdit){
-    if(S.mode==="supabase" && !S.session){ app.innerHTML=toPaths(vLogin()); $("#loginform").addEventListener("submit",submitLogin); return; }
+    if(S.mode==="supabase" && !S.session){ app.innerHTML=toPaths(vLogin()); $("#loginform").addEventListener("submit",submitLogin); mountTurnstile(); return; }
+    if(S.mode==="supabase" && S.isListed && S.aal!=="aal2"){ renderMfa(app); return; }
     app.innerHTML = toPaths((site()?header():"")+`<section class="block"><div class="wrap"><h1 class="nf">The portal is for site editors.</h1><p class="lead" style="margin-top:12px">This account doesn't have edit access. Ask an administrator to add you. <a href="#/">Back to the website</a></p>${S.mode==="supabase"?`<p><button class="btn ghost" data-act="signout">Sign out</button></p>`:""}</div></section>`);
     return;
   }
@@ -427,6 +513,8 @@ function renderAdmin(app,r,scrollTop){
     case "policies": html=vPolicies(r[2]); break;
     case "jobs": html=vJobs(r[2]); break;
     case "applications": html=vApplications(); break;
+    case "activity": html=vActivity(); break;
+    case "insights": vInsightsAsync(app, S.insDays||30); return;
     default: html=vOverview();
   }
   app.innerHTML=toPaths(html); bindUploads();
@@ -456,8 +544,11 @@ async function uploadFiles(files){
 async function submitLogin(e){
   e.preventDefault(); const fd=new FormData(e.target), msg=$("#loginmsg"), btn=e.target.querySelector("button");
   btn.disabled=true; msg.textContent="Signing in…";
-  const { data, error } = await S.sb.auth.signInWithPassword({ email:fd.get("email"), password:fd.get("password") });
-  if(error){ msg.textContent = "Sign-in failed: "+error.message; btn.disabled=false; return; }
+  const captchaToken = tsToken("login");
+  if(CFG.turnstileSiteKey && !captchaToken){ msg.textContent="Complete the security check first."; btn.disabled=false; return; }
+  const { data, error } = await S.sb.auth.signInWithPassword({ email:fd.get("email"), password:fd.get("password"), options: captchaToken ? { captchaToken } : undefined });
+  tsReset("login");
+  if(error){ msg.textContent = /captcha/i.test(error.message) ? "The security check failed. Try again." : /rate|too many/i.test(error.message) ? "Too many sign-in attempts. Wait a few minutes and try again." : "Sign-in failed. Check your email and password."; btn.disabled=false; return; }
   await setSession(data.session); await sbLoad(); render(false);
 }
 
@@ -478,6 +569,14 @@ document.addEventListener("keydown",e=>{ if((e.key==="Enter"||e.key===" ") && e.
 async function act(a,e){
   const act=a.dataset.act;
   switch(act){
+    case "insights": S.insDays=+a.dataset.days; render(false); break;
+    case "reset-starter": { if(a.dataset.confirm!=="1"){ a.dataset.confirm="1"; a.textContent="Yes, replace all website content"; return; }
+      try{ const res=await fetch("/content.json",{cache:"no-store"}); const data=await res.json(); const cur=site()||{};
+        // keep what editors have already filled in
+        data.contact={...data.contact,...(cur.contact||{})}; data.social={...data.social,...(cur.social||{})}; data.apps={...data.apps,...(cur.apps||{})};
+        if(cur.branches?.length) data.branches=cur.branches; if(cur.downloads?.length) data.downloads=cur.downloads; if(cur.jobs?.length) data.jobs=cur.jobs;
+        await store.saveSite(data); S.draft=null; S.dirty=false; toast("Starter content loaded"); render(false);
+      }catch(err){ toast("Starter content couldn't be loaded."); } break; }
     case "appfilter": S.appJob=a.dataset.job; S.appStatus=""; nav("/admin/applications"); break;
     case "addtpl": { const arr=getPath(ensureDraft(),a.dataset.path)||[]; arr.push(JSON.parse(a.dataset.tpl)); setPath(S.draft,a.dataset.path,arr); markDirty(); render(false); break; }
     case "moveitem": { const arr=getPath(ensureDraft(),a.dataset.path); const i=+a.dataset.i, j=i+(+a.dataset.dir); [arr[i],arr[j]]=[arr[j],arr[i]]; markDirty(); render(false); break; }
@@ -486,7 +585,7 @@ async function act(a,e){
     case "addjob": { const d=ensureDraft(); d.jobs=d.jobs||[]; const id=slug("job-"+uid()); d.jobs.unshift({id,title:"",department:"",location:"Addis Ababa",type:"Full-time",closes:"",status:"draft",summary:"",body:""}); markDirty(); nav("/admin/jobs/"+id); break; }
     case "cv": { const app=S.applications.find(x=>x.id===a.dataset.id); const w=window.open("","_blank"); try{ const u=await store.cvUrl(app); if(w) w.location=u; else location.href=u; }catch(err){ w?.close(); toast("The CV couldn't be opened. Try again."); } break; }
     case "delapp": if(a.dataset.confirm!=="1"){ a.dataset.confirm="1"; a.textContent="Confirm"; return; } try{ await store.deleteApp(a.dataset.id); if(S.mode!=="cloud") render(false); toast("Application deleted"); }catch(err){ toast("Couldn't delete. Try again."); } break;
-    case "signout": await S.sb?.auth.signOut(); S.canEdit=false; S.session=null; S.maybeEditor=false; nav("/"); break;
+    case "signout": await S.sb?.auth.signOut(); S.canEdit=false; S.session=null; S.maybeEditor=false; S.isListed=false; S.aal=null; S.applications=[]; S.inquiries=[]; S.audit=null; nav("/"); break;
     case "save-site": {
       a.disabled=true; a.textContent="Saving…";
       try{ await store.saveSite(clone(S.draft)); S.dirty=false; S.draft=null; toast("Changes saved"); render(false); }
@@ -535,6 +634,14 @@ async function act(a,e){
     case "delinq": if(a.dataset.confirm!=="1"){ a.dataset.confirm="1"; a.textContent="Confirm"; return; } try{ await store.deleteInquiry(a.dataset.id); if(S.mode!=="cloud") render(false);}catch(err){toast("Couldn't delete. Try again.")} break;
   }
 }
+
+/* Sign editors out after a period of inactivity. Unsaved edits stay in this tab and reappear after signing back in. */
+let lastActive=Date.now();
+["pointerdown","keydown","scroll"].forEach(ev=>document.addEventListener(ev,()=>{ lastActive=Date.now(); },{passive:true}));
+setInterval(async()=>{
+  if(S.mode!=="supabase" || !S.session) return;
+  if(Date.now()-lastActive > IDLE_MINUTES*60000){ await S.sb.auth.signOut(); S.session=null; S.canEdit=false; S.maybeEditor=false; if(curPath().startsWith("/admin")){ render(false); toast(`Signed out after ${IDLE_MINUTES} minutes of inactivity`); } }
+}, 30000);
 
 window.RaysAdmin = {
   render: renderAdmin, act,

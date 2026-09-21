@@ -1,0 +1,14 @@
+# Supabase CLI configuration for the Rays website.
+# Used by `supabase db push` / `supabase functions deploy` and the GitHub Action.
+project_id = "rays-website"
+
+# The website calls these functions directly, so they don't require a signed-in user.
+# Each one checks the request origin and applies its own rate limits.
+[functions.submit]
+verify_jwt = false
+
+[functions.ask]
+verify_jwt = false
+
+[functions.track]
+verify_jwt = false

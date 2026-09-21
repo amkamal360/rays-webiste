@@ -5,7 +5,7 @@
    Backends: "supabase" (production, plain REST for public reads), "cloud" (claude.ai
    artifact), "local" (browser-only preview). */
 
-const CFG = Object.assign({ supabaseUrl:"", supabaseAnonKey:"", adobeFontsKit:"", mediaBucket:"media", adminScript:"/assets/admin.js" },
+const CFG = Object.assign({ supabaseUrl:"", supabaseAnonKey:"", adobeFontsKit:"", mediaBucket:"media", adminScript:"/assets/admin.js", turnstileSiteKey:"", formsFunction:"", aiAnswers:false },
   (()=>{ try{ return JSON.parse(document.getElementById("rays-config")?.textContent||"{}"); }catch(e){ return {}; } })(), window.RAYS_CONFIG||{});
 const PRERENDER = !!window.__RAYS_PRERENDER;
 const IS_ARTIFACT = !PRERENDER && !!(window.claude && typeof window.claude.use==="function");
@@ -25,6 +25,7 @@ const S = { mode:"loading", loaded:false, site:null, posts:[], media:[], inquiri
 const LS = { get(k){try{return JSON.parse(localStorage.getItem("rays:"+k))}catch(e){return null}}, set(k,v){try{localStorage.setItem("rays:"+k,JSON.stringify(v));return true}catch(e){return false}} };
 
 const $ = (s,r=document)=>r.querySelector(s);
+const isLocalHost = () => { try{ return location.protocol==="file:" || /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname); }catch(e){ return false; } };
 const esc = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const clone = o => JSON.parse(JSON.stringify(o));
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -121,7 +122,43 @@ async function bootCloud(db,assets,user){
   db.collection("posts").orderBy("date","desc").onSnapshot(q=>{ S.posts=q.docs.map(d=>({id:d.id,...d.data()})); if(canRerender()) render(false); }, ()=>{});
 }
 
+/* ================= bot check (Cloudflare Turnstile) + protected form submissions =================
+   When a Turnstile site key is configured, public forms go through the "submit" Edge Function,
+   which verifies the bot check and applies rate limits before anything is stored.
+   The Turnstile script only loads on pages that actually have a form. */
+const FORMS_URL = () => USE_SB ? (CFG.formsFunction || SB_URL+"/functions/v1/submit") : "";
+let tsLoading=null; const tsWidgets={};
+function loadTurnstile(){
+  if(window.turnstile) return Promise.resolve();
+  if(!tsLoading) tsLoading=new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; sc.async=true; sc.onload=res; sc.onerror=()=>{ tsLoading=null; rej(); }; document.head.appendChild(sc); });
+  return tsLoading;
+}
+const tsBox = name => CFG.turnstileSiteKey ? `<div class="ts" data-ts="${name}" aria-label="Security check"></div>` : "";
+function mountTurnstile(){
+  if(!CFG.turnstileSiteKey) return;
+  document.querySelectorAll("[data-ts]:not([data-ts-mounted])").forEach(el=>{
+    el.dataset.tsMounted="1";
+    loadTurnstile().then(()=>{ tsWidgets[el.dataset.ts]=window.turnstile.render(el,{ sitekey:CFG.turnstileSiteKey, theme:effectiveTheme(), size:"flexible", action:el.dataset.ts,
+      callback:t=>{ el.dataset.token=t; }, "expired-callback":()=>{ el.dataset.token=""; }, "error-callback":()=>{ el.dataset.token=""; } }); })
+    .catch(()=>{ el.textContent="The security check couldn't load. Check your connection and refresh the page."; });
+  });
+}
+const tsToken = name => document.querySelector(`[data-ts="${name}"]`)?.dataset.token || "";
+function tsReset(name){ try{ window.turnstile?.reset(tsWidgets[name]); }catch(e){} const el=document.querySelector(`[data-ts="${name}"]`); if(el) el.dataset.token=""; }
+class FormError extends Error{ constructor(msg,status){ super(msg); this.status=status; this.userMessage=msg; } }
+async function submitProtected(body){
+  const r = await fetch(FORMS_URL(), { method:"POST", headers:{ "Content-Type":"application/json", apikey:CFG.supabaseAnonKey, Authorization:"Bearer "+CFG.supabaseAnonKey }, body:JSON.stringify(body) });
+  let data={}; try{ data=await r.json(); }catch(e){}
+  if(!r.ok) throw new FormError(data.error || (r.status===429 ? "Too many submissions from your connection. Please try again later." : "Your submission couldn't be sent. Try again."), r.status);
+  return data;
+}
+
 async function addInquiry(q){
+  if(S.mode==="supabase" && FORMS_URL()){
+    const token=tsToken("contact"); if(CFG.turnstileSiteKey && !token) throw new FormError("Complete the security check above the Send button.",400);
+    try{ await submitProtected({ type:"contact", token, fields:{name:q.name,reach:q.reach,audience:q.audience,message:q.message} }); } finally { tsReset("contact"); }
+    return;
+  }
   if(S.mode==="supabase"){ await sbRest("inquiries",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({name:q.name,reach:q.reach,audience:q.audience,message:q.message})}); return; }
   if(S.mode==="cloud"){ const me = S.user ? await S.user.id() : null; if(!me) throw new Error("no-id");
     const ref=S.db.doc("inquiries/"+me); const cur=await ref.get(); const msgs=(cur.exists?cur.data().messages:[])||[];
@@ -147,33 +184,67 @@ const logoImg = (eager) => `<img src="${esc(BRAND.logo)}" alt="Rays MicroFinance
 const CURVE_WINDOW = "M300 20C330 120 280 190 210 270C150 340 90 400 100 450C110 490 170 507 250 505C400 500 495 400 495 265C495 140 420 40 300 20Z";
 const CURVE_BAND = "M300 20C330 120 280 190 210 270C150 340 90 400 100 450C110 490 170 507 250 505C300 504 340 498 372 488C332 515 292 523 250 523C160 525 76 500 76 450C72 388 135 322 195 253C262 176 308 112 285 40C272 6 205 12 155 45C105 80 62 140 36 205C78 128 140 55 212 26C250 12 288 8 300 20Z";
 
+
+/* ================= light / dark theme =================
+   "system" follows the device; a choice is stored in localStorage["rays-theme"].
+   An inline script in <head> applies the stored choice before first paint (no flash). */
+const THEME_KEY="rays-theme";
+const themePref = () => { try{ const t=localStorage.getItem(THEME_KEY); return t==="light"||t==="dark"?t:"system"; }catch(e){ return "system"; } };
+const darkMQ = typeof matchMedia==="function" ? matchMedia("(prefers-color-scheme: dark)") : null;
+const effectiveTheme = () => { const p=themePref(); return p==="system" ? (darkMQ?.matches?"dark":"light") : p; };
+function applyTheme(p){
+  try{ p==="system" ? localStorage.removeItem(THEME_KEY) : localStorage.setItem(THEME_KEY,p); }catch(e){}
+  const r=document.documentElement; p==="system" ? r.removeAttribute("data-theme") : r.setAttribute("data-theme",p);
+  syncThemeUI();
+}
+function syncThemeUI(){
+  const e=effectiveTheme(), p=themePref();
+  document.querySelectorAll(".theme-btn").forEach(b=>{ const l=e==="dark"?"Switch to light mode":"Switch to dark mode"; b.setAttribute("aria-label",l); b.title=l; });
+  document.querySelectorAll("[data-theme-pick]").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.themePick===p)));
+}
+const themeBtn = () => `<button class="iconbtn2 theme-btn" data-act="theme" aria-label="Switch between light and dark mode">
+  <svg class="moon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  <svg class="sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2 12h2.2M19.8 12H22M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg></button>`;
+const themePicker = () => `<div class="themepick" role="group" aria-label="Colour theme"><span>Theme</span>${[["system","Automatic"],["light","Light"],["dark","Dark"]].map(([k,l])=>`<button type="button" data-theme-pick="${k}" aria-pressed="false">${l}</button>`).join("")}</div>`;
+
 /* ================= public views ================= */
+const ICONS = {
+  account:'<path d="M4 7h16v11H4z"/><path d="M4 10h16M8 15h3"/>',
+  finance:'<path d="M12 3v18M7 8c0-2 2-3 5-3s5 1 5 3-2 3-5 3-5 1-5 3 2 3 5 3 5-1 5-3"/>',
+  wallet:'<path d="M3 7h15a3 3 0 0 1 3 3v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7l12-3v3M16 13h2"/>',
+  qr:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/>',
+  pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
+  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>'
+};
+const icon = (k,sz=24) => `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||ICONS.arrow}</svg>`;
+const navSections = () => (site()?.sections||[]).filter(s=>s.nav!==false);
+const aboutSection = () => (site()?.sections||[]).find(s=>s.id==="about");
+
 function header(){
-  const secs = site()?.sections||[];
-  const portal = S.canEdit || S.maybeEditor;
+  const secs = navSections(); const r=route();
+  const portal = (S.canEdit && !(S.mode==="local" && !isLocalHost())) || S.maybeEditor;
   return `${announcement()}<div class="brandbar" aria-hidden="true"></div><header class="site"><div class="wrap bar">
     <a class="logo" href="#/" aria-label="Rays home">${logoImg(true)}</a>
-    <nav class="main" aria-label="Main">${secs.map(s=>`<div>
-      <button class="top" aria-expanded="${S.openDrop===s.id}" aria-controls="drop-${esc(s.id)}" data-drop="${esc(s.id)}">${esc(s.title)}</button>
-      <div class="drop${S.openDrop===s.id?" open":""}" id="drop-${esc(s.id)}"><p>${esc(s.intro)}</p>${s.pages.map(p=>`<a href="${pageHref(s.id,p.id)}">${esc(p.title)}</a>`).join("")}</div></div>`).join("")}
-      <div><a class="top" href="#/media">Media</a></div>
-    </nav>
+    <nav class="main" aria-label="Main">${secs.map(s=>`<a class="top" href="#/${esc(s.id)}" ${r[0]===s.id?'aria-current="page"':""}>${esc(s.title)}</a>`).join("")}</nav>
     <div class="tools">
-      <button class="iconbtn2" data-act="search" aria-label="Search the site"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
-      <a class="btn small cta" href="#/about/contact">Open an account</a>
+      <button class="askbtn" data-act="search" aria-label="Ask Rays or search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Ask Rays</span></button>
+      ${themeBtn()}
+      <a class="btn small cta" href="#/personal/accounts" data-track="cta:header-open-account">Open an account</a>
       ${portal?`<a class="btn small ghost portal" href="#/admin">Portal</a>`:""}
     </div>
     <button class="menu-btn" data-act="drawer" aria-label="Open menu" aria-controls="drawer" aria-expanded="false"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   </div></header>
   <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Menu">
     <div class="drawer-top"><a class="logo" href="#/">${logoImg()}</a><button class="btn small ghost" data-act="drawer-close">Close</button></div>
-    ${secs.map(s=>`<details><summary>${esc(s.title)}</summary>${s.pages.map(p=>`<a href="${pageHref(s.id,p.id)}">${esc(p.title)}</a>`).join("")}</details>`).join("")}
-    <details><summary>Media</summary><a href="#/media">All posts</a><a href="#/media/video">Videos</a></details>
-    <details><summary>Legal</summary>${pubPolicies().map(p=>`<a href="#/legal/${esc(p.id)}">${esc(p.title)}</a>`).join("")}</details>
-    <p style="margin-top:22px"><a class="btn block-btn" href="#/about/contact">Open an account</a></p>
+    <nav class="drawer-nav" aria-label="Main">${secs.map(s=>`<a href="#/${esc(s.id)}"><b>${esc(s.title)}</b><span>${esc(s.intro)}</span></a>`).join("")}</nav>
+    <nav class="drawer-more" aria-label="More">${(aboutSection()?.pages||[]).map(p=>`<a href="${pageHref("about",p.id)}">${esc(p.title)}</a>`).join("")}<a href="#/media">News</a><a href="#/legal">Legal</a></nav>
+    <div style="margin:18px 0">${themePicker()}</div>
+    <p><a class="btn block-btn" href="#/personal/accounts">Open an account</a></p>
   </div>
-  <div class="search" id="search" role="dialog" aria-modal="true" aria-label="Search" hidden><div class="wrap">
-    <div class="searchbar"><label class="visually-hidden" for="searchq">Search Rays</label><input type="search" id="searchq" placeholder="Search accounts, financing, help, policies…" autocomplete="off" enterkeyhint="search"><button class="btn small ghost" data-act="search-close">Close</button></div>
+  <div class="search" id="search" role="dialog" aria-modal="true" aria-label="Ask Rays" hidden><div class="wrap">
+    <div class="searchbar"><form class="askform" data-ask="overlay" role="search"><label class="visually-hidden" for="searchq">Ask Rays</label><input type="search" id="searchq" name="q" placeholder="${esc(site()?.home?.askPlaceholder||"Ask a question or search")}" autocomplete="off" enterkeyhint="search" maxlength="300"><button class="btn small" type="submit">Ask</button></form><button class="btn small ghost" data-act="search-close">Close</button></div>
+    <div class="askout" id="askout-overlay" aria-live="polite"></div>
     <div id="searchres" class="searchres"></div></div></div>`;
 }
 
@@ -186,10 +257,11 @@ function footer(){
       <div><a class="logo" href="#/" aria-label="Rays home">${logoImg()}</a>
         <p class="fdesc">${esc(s.brand?.tagline)}</p>
         <p class="fdesc">${[c.address,c.phone,c.email].filter(Boolean).map(esc).join("<br>")}</p></div>
-      ${col("personal")}${col("financing")}${col("platforms")}${col("about","Company")}
+      ${navSections().map(x=>col(x.id)).join("")}${col("about","Company")}
     </div>
     ${footerExtras()}
     <div class="fbase"><span>© ${new Date().getFullYear()} ${esc(s.brand?.name)}. All rights reserved.${s.brand?.domain?` · ${esc(s.brand.domain)}`:""}</span>
+      ${themePicker()}
       <span class="langs" aria-label="Languages">${(s.languages||[]).map(l=>`<span>${esc(l)}</span>`).join("")}</span></div>
   </div></footer>`;
 }
@@ -206,16 +278,24 @@ function footerExtras(){
   </div>`;
 }
 
+function askBox(where){
+  const h=site()?.home||{};
+  return `<form class="askform hero-ask" data-ask="${where}" role="search">
+      <label class="visually-hidden" for="ask-${where}">Ask Rays</label>
+      <input type="search" id="ask-${where}" name="q" placeholder="${esc(h.askPlaceholder||"Ask a question")}" autocomplete="off" enterkeyhint="search" maxlength="300">
+      <button class="btn yellow" type="submit">Ask</button></form>
+    ${(h.suggestions||[]).length?`<div class="chips-row">${h.suggestions.slice(0,4).map(q=>`<button type="button" class="qchip" data-askq="${esc(q)}" data-for="${where}">${esc(q)}</button>`).join("")}</div>`:""}
+    <div class="askout" id="askout-${where}" aria-live="polite"></div>`;
+}
 function viewHome(){
-  const s=site(), h=s.home||{}, fin=findPage("financing","emurabaha");
+  const s=site(), h=s.home||{};
   const motto = (s.brand?.motto||"").split(/(?<=\.)\s+/).filter(Boolean);
-  const links=["#/personal/accounts","#/financing/emurabaha","#/infrastructure/build"];
   const latest = published().slice(0,3);
   return `<section class="hero"><div class="wrap">
       <div class="hero-copy">
-        <h1>${motto.map((m,i)=>`<a href="${links[i]||"#/"}">${esc(m)}</a>`).join("")}</h1>
+        <h1>${motto.map(m=>`<span>${esc(m)}</span>`).join("")}</h1>
         <p class="lead">${esc(h.lead)}</p>
-        <div class="ctas"><a class="btn yellow" href="#/about/contact">Open an account</a><a class="btn ghost-light" href="#/financing/emurabaha">Explore financing</a><a class="btn ghost-light" href="#/infrastructure/build">Build with Rays</a></div>
+        ${askBox("home")}
       </div>
       <div class="curvewrap"><figure class="curve">
         <div class="window"><canvas id="rain" aria-hidden="true"></canvas></div>
@@ -224,51 +304,36 @@ function viewHome(){
       <p class="curvecap">${esc(s.brand?.meaning)}</p></div>
     </div></section>
 
-  <section class="block"><div class="wrap">
-    <div class="split"><h2>One institution. Three capabilities.</h2><div class="prose">${rich(h.storyText)}</div></div>
-    <div class="caps">${(h.capabilities||[]).map(c=>`<a href="${esc(safeHref(c.href))}"><h3>${esc(c.title)}</h3><p>${esc(c.text)}</p><span>Learn more</span></a>`).join("")}</div>
+  <section class="tasks-wrap" aria-labelledby="tasks-h"><div class="wrap">
+    <h2 id="tasks-h" class="visually-hidden">What would you like to do?</h2>
+    <div class="tasks">${(h.tasks||[]).map(t=>`<a class="task" href="${esc(safeHref(t.href))}" data-track="task:${esc(t.title)}"><span class="ti">${icon(t.icon)}</span><span><b>${esc(t.title)}</b><small>${esc(t.text)}</small></span></a>`).join("")}</div>
   </div></section>
 
-  ${fin?`<section class="block band"><div class="wrap">
-    <div class="split"><div><h2>${esc(fin.page.title)}: ${esc(fin.page.lead)}</h2></div><div><p>${esc(fin.page.body)}</p><a class="btn" href="#/financing/emurabaha">How eMurabaha works</a></div></div>
-    ${fin.page.steps?`<ol class="steps">${fin.page.steps.map(x=>`<li><b>${esc(x.title)}</b><span>${esc(x.text)}</span></li>`).join("")}</ol>`:""}
-  </div></section>`:""}
-
-  <section class="block"><div class="wrap split">
-    <div><h2>${esc(h.connectivityTitle)}</h2></div>
-    <div><p>${esc(h.connectivityText)}</p><ul class="chips">${(h.connectivity||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+  <section class="block slim"><div class="wrap">
+    <div class="caps">${(h.capabilities||[]).map(c=>`<a href="${esc(safeHref(c.href))}"><h2>${esc(c.title)}</h2><p>${esc(c.text)}</p><span>Explore ${esc(c.title.toLowerCase())}</span></a>`).join("")}</div>
+    <div class="stats compact">${(s.stats||[]).slice(0,4).map(x=>`<div><b>${esc(x.value)}</b><span>${esc(x.label)}</span></div>`).join("")}</div>
   </div></section>
 
-  <section class="block" style="padding-top:0"><div class="wrap"><div class="wallet">
-    <div><h2>${esc(h.walletTitle)}</h2><p style="margin-top:16px">${esc(h.walletText)}</p>
-      <div class="btnrow"><a class="btn yellow" href="#/platforms/sahaypay">Meet SahayPay</a><a class="btn ghost-light" href="#/infrastructure/white-label">White-label it</a></div></div>
-    <div><div class="big">5M+</div><p>registered wallet customers on SahayPay deployments</p></div>
-  </div></div></section>
-
-  <section class="block cream inhouse"><div class="wrap">
-    <div class="split"><h2>${esc(h.inhouseTitle)}</h2><div><p>${esc(h.inhouseText)}</p><ul class="chips">${(h.inhouseList||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul><p style="margin-top:22px"><a class="btn" href="#/platforms/finsharia">About FinSharia</a></p></div></div>
-  </div></section>
-
-  <section class="block"><div class="wrap">
-    <h2>Built for Ethiopia's financial ecosystem</h2>
-    <div class="stats">${(s.stats||[]).map(x=>`<div><b>${esc(x.value)}</b><span>${esc(x.label)}</span></div>`).join("")}</div>
-  </div></section>
-
-  ${latest.length?`<section class="block band"><div class="wrap">
-    <div class="rowhead"><h2>News and media</h2><a href="#/media">See all posts</a></div>
+  ${latest.length?`<section class="block band slim"><div class="wrap">
+    <div class="rowhead"><h2>Latest from Rays</h2><a href="#/media">All news</a></div>
     <div class="posts">${latest.map(postCard).join("")}</div>
   </div></section>`:""}
-
-  <section class="block"><div class="wrap">
-    <h2>Let's build what comes next.</h2>
-    <div class="aud">
-      <a href="#/personal/accounts"><b>Individuals</b><span>Open an account or explore financial services.</span></a>
-      <a href="#/business/accounts"><b>Businesses</b><span>Accounts, payments and financing.</span></a>
-      <a href="#/infrastructure/institutions"><b>Financial institutions</b><span>White-label platforms and connectivity.</span></a>
-      <a href="#/infrastructure/developers"><b>Fintechs and developers</b><span>APIs, integrations and building on Rays.</span></a>
-    </div>
-  </div></section>
   <div class="tagline"><img src="${esc(BRAND.tagline)}" alt="${esc(s.brand?.tagline2||"Ahead of the curve.")}" width="420" height="122" loading="lazy" decoding="async"></div>`;
+}
+
+/* One short page per section: every product with its key facts and next step, no clicking around. */
+function viewHub(sec){
+  return `<section class="pagehead"><div class="wrap" style="padding-bottom:30px">
+    <div class="crumb"><a href="#/">Rays</a></div><h1>${esc(sec.title)}</h1><p class="lead">${esc(sec.intro)}</p>
+    ${sec.pages.length>1?`<nav class="jump" aria-label="On this page">${sec.pages.map(p=>`<a href="#${esc(p.id)}" data-jump="${esc(p.id)}">${esc(p.title)}</a>`).join("")}</nav>`:""}</div></section>
+  <section class="block pagebody"><div class="wrap hub">
+    ${sec.pages.map(p0=>{ const p=findPage(sec.id,p0.id)?.page||p0; const facts=(p.features||[]).slice(0,4);
+      return `<article class="hubitem" id="${esc(p0.id)}">
+        <div><h2>${esc(p.title)}</h2><p class="lead">${esc(p.lead||"")}</p>
+          ${facts.length?`<ul class="facts">${facts.map(f=>`<li><b>${esc(f.title)}</b> ${esc(f.text)}</li>`).join("")}</ul>`:""}</div>
+        <div class="hubcta">${p.cta?.label?`<a class="btn" href="${esc(safeHref(p.cta.href))}" data-track="cta:${esc(p.cta.label)}">${esc(p.cta.label)}</a>`:""}<a class="more" href="#/${esc(sec.id)}/${esc(p0.id)}">Details</a></div>
+      </article>`; }).join("")}
+  </div></section>`;
 }
 
 function postCard(p){
@@ -309,6 +374,7 @@ function contactForm(){
       <label class="f"><span>I'm contacting Rays as</span><select name="audience"><option>An individual</option><option>A business or MSME</option><option>A financial institution</option><option>A fintech or developer</option><option>A job applicant</option><option>Media</option></select></label>
       <label class="f"><span>How can we help?</span><textarea name="message" required maxlength="4000"></textarea></label>
       <label class="hp" aria-hidden="true">Leave empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+      ${tsBox("contact")}
       <p id="contact-msg" role="status" class="muted"></p>
       <button class="btn" type="submit">Send message</button>
     </form></div>`;
@@ -453,6 +519,7 @@ function applyForm(job){
     <label class="f"><span>Why you'd like to join Rays <small class="muted">(optional)</small></span><textarea name="message" maxlength="3000"></textarea></label>
     <label class="check"><input type="checkbox" name="consent" required> I agree that Rays may use my details to assess my application, as described in the <a href="#/legal/privacy" target="_blank">privacy policy</a>.</label>
     <label class="hp" aria-hidden="true">Leave empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+    ${tsBox("apply")}
     <p id="apply-msg" role="status" class="muted"></p>
     <button class="btn" type="submit">Submit application</button></form>`;
 }
@@ -467,10 +534,20 @@ async function submitApply(e){
   if(file && file.size && !/\.(pdf|docx?)$/i.test(file.name)){ msg.textContent="Attach your CV as a PDF or Word document."; return; }
   if(!fd.get("consent")){ msg.textContent="Tick the box to agree to how we'll use your details."; return; }
   const btn=f.querySelector("button[type=submit]"); btn.disabled=true; msg.textContent="Sending your application…";
-  try{ await addApplication(q, file&&file.size?file:null); f.innerHTML=`<h2 class="sub" style="margin-top:0">Application received</h2><p>Thank you, ${esc(q.name)}. We've received your application${q.jobId!=="open"?` for ${esc(q.jobTitle)}`:""} and will contact you if you're shortlisted.</p>`; }
-  catch(err){ btn.disabled=false; msg.textContent="Your application couldn't be sent. Check your connection and try again."; }
+  try{ await addApplication(q, file&&file.size?file:null); track("form","application:"+q.jobId); f.innerHTML=`<h2 class="sub" style="margin-top:0">Application received</h2><p>Thank you, ${esc(q.name)}. We've received your application${q.jobId!=="open"?` for ${esc(q.jobTitle)}`:""} and will contact you if you're shortlisted.</p>`; }
+  catch(err){ btn.disabled=false; msg.textContent=err?.userMessage || "Your application couldn't be sent. Check your connection and try again."; }
 }
 async function addApplication(q,file){
+  if(S.mode==="supabase" && FORMS_URL()){
+    const token=tsToken("apply"); if(CFG.turnstileSiteKey && !token) throw new FormError("Complete the security check above the Submit button.",400);
+    let res; try{ res = await submitProtected({ type:"application", token, fields:{jobId:q.jobId,jobTitle:q.jobTitle,name:q.name,email:q.email,phone:q.phone,message:q.message,cvLink:q.cvLink}, cv: file ? {name:file.name,type:file.type,size:file.size} : null }); } finally { tsReset("apply"); }
+    if(file && res.upload?.signedUrl){
+      const fd=new FormData(); fd.append("cacheControl","3600"); fd.append("",file);
+      const up=await fetch(res.upload.signedUrl,{method:"PUT",headers:{"x-upsert":"false"},body:fd});
+      if(!up.ok) throw new FormError("Your details were received, but the CV didn't upload. Please email it to us, quoting your name.",up.status);
+    }
+    return;
+  }
   if(S.mode==="supabase"){
     let cv_path="", cv_name="";
     if(file){ const ext=(file.name.match(/\.(pdf|docx?)$/i)||[".pdf"])[0].toLowerCase(); cv_path=`applications/${uid()}-${slug(q.name)}${ext}`; cv_name=file.name.slice(0,200);
@@ -512,9 +589,9 @@ function ensureFull(){
 function searchIndex(){
   const s=site(); if(!s) return [];
   const out=[];
-  for(const sec of s.sections||[]) for(const p of sec.pages){ if(p.ref) continue; out.push({t:p.title,s:sec.title,x:[p.lead,p.body,(p.features||[]).map(f=>f.title+" "+f.text).join(" "),(p.list||[]).join(" ")].join(" "),h:pageHref(sec.id,p.id)}); }
+  for(const sec of s.sections||[]) for(const p of sec.pages){ if(p.ref) continue; out.push({t:p.title,s:sec.title,d:p.lead,x:[p.lead,p.body,(p.features||[]).map(f=>f.title+" "+f.text).join(" "),(p.list||[]).join(" ")].join(" "),h:pageHref(sec.id,p.id)}); }
   for(const f of s.faqs||[]) out.push({t:f.q,s:"Help",x:f.a,h:"#/about/help"});
-  for(const p of pubPolicies()) out.push({t:p.title,s:"Legal",x:p.summary+" "+(p.body||""),h:"#/legal/"+p.id});
+  for(const p of pubPolicies()) out.push({t:p.title,s:"Legal",d:p.summary,x:p.summary+" "+(p.body||""),h:"#/legal/"+p.id});
   for(const j of openJobs()) out.push({t:j.title,s:"Careers",x:[j.department,j.location,j.summary].join(" "),h:"#/about/careers/"+j.id});
   for(const p of published()) out.push({t:p.title,s:"News",x:(p.excerpt||"")+" "+(p.body||""),h:"#/media/post/"+p.id});
   return out;
@@ -528,6 +605,72 @@ function runSearch(q){
     return {...e,score,snip}; }).filter(Boolean).sort((a,b)=>b.score-a.score).slice(0,12);
   box.innerHTML = toPaths(hits.length ? hits.map(h=>`<a href="${h.h}"><span class="muted small">${esc(h.s)}</span><b>${esc(h.t)}</b><span class="small">${esc(h.snip)}</span></a>`).join("") : `<p class="muted">No results for "${esc(q)}". Try a different word, or <a href="#/about/help">browse help</a>.</p>`);
 }
+/* ================= Ask Rays =================
+   1) Instant: best-matching FAQ answer + matching pages, computed in the browser from content already on the page.
+   2) AI (when enabled): the "ask" Edge Function retrieves the relevant parts of the site and asks Claude to answer
+      briefly, in the visitor's language, citing only Rays content. */
+const STOP = new Set("a an the and or of to in on for with is are do does can i my me you your we our how what when where which who why be it this that at by from as if not no yes please about get".split(" "));
+const terms = q => String(q).toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}\s]/gu," ").split(/\s+/).filter(w=>w.length>1 && !STOP.has(w));
+function localAnswer(q){
+  const t=terms(q); if(!t.length) return null;
+  let best=null, bestScore=0;
+  for(const f of site()?.faqs||[]){
+    const qt=f.q.toLowerCase(), at=f.a.toLowerCase();
+    const sc=t.reduce((n,w)=>n+(qt.includes(w)?3:0)+(at.includes(w)?1:0),0);
+    if(sc>bestScore){ best=f; bestScore=sc; }
+  }
+  const pages=searchIndex().map(e=>{ const tl=e.t.toLowerCase(), x=(e.x||"").toLowerCase(); const sc=t.reduce((n,w)=>n+(tl.includes(w)?3:0)+(x.includes(w)?1:0),0); return {...e,sc}; })
+    .filter(e=>e.sc>0 && e.s!=="Help").sort((a,b)=>b.sc-a.sc).slice(0,3);
+  return { faq: bestScore>=Math.max(3,Math.ceil(t.length*1.5)) ? best : null, pages };
+}
+const AI_ON = () => USE_SB && !!CFG.aiAnswers;
+function renderAnswer(where, res, q){
+  const out=$("#askout-"+where); if(!out) return;
+  const src=(res.sources||[]).slice(0,3);
+  out.innerHTML = toPaths(`<div class="answer">
+    ${res.text?`<div class="prose">${rich(res.text)}</div>`:`<p>I couldn't find that on our website. <a href="#/about/contact">Ask our team</a>, or call any branch.</p>`}
+    ${src.length?`<p class="srcs"><span class="muted small">${res.ai?"Based on":"See"}</span> ${src.map(x=>`<a href="${esc(x.href)}" data-track="answer-source:${esc(x.title)}">${esc(x.title)}</a>`).join("")}</p>`:""}
+    <div class="fb"><span class="muted small">${res.ai?"AI answer from Rays website content. For your own account, contact us.":"Helpful?"}</span>
+      <button type="button" class="fbb" data-fb="up" aria-label="This was helpful">👍</button><button type="button" class="fbb" data-fb="down" aria-label="This wasn't helpful">👎</button></div></div>`);
+  out.dataset.q=q;
+}
+async function ask(where, q){
+  q=String(q||"").trim().slice(0,300); if(!q) return;
+  const out=$("#askout-"+where); if(!out) return;
+  track("ask", q);
+  const loc=localAnswer(q);
+  const top=loc?.pages?.[0];
+  const localRes = loc?.faq ? { text: loc.faq.a, sources:[{title:loc.faq.q,href:"#/about/help"},...loc.pages.map(p=>({title:p.t,href:p.h}))] }
+    : top?.d ? { text: `**${top.t}.** ${top.d}`, sources: loc.pages.map(p=>({title:p.t,href:p.h})) }
+    : { text:"", sources:(loc?.pages||[]).map(p=>({title:p.t,href:p.h})) };
+  if(!AI_ON()){ renderAnswer(where, localRes, q); if(!localRes.text && !localRes.sources.length) track("ask_unanswered", q); return; }
+  out.innerHTML=`<div class="answer thinking"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span> Finding the answer…</div>`;
+  try{
+    const r=await fetch(SB_URL+"/functions/v1/ask",{method:"POST",headers:{"Content-Type":"application/json",apikey:CFG.supabaseAnonKey,Authorization:"Bearer "+CFG.supabaseAnonKey},body:JSON.stringify({q, path:curPath()})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error||"ask failed");
+    renderAnswer(where, { text:d.answer, sources:d.sources, ai:true }, q);
+  }catch(e){ renderAnswer(where, localRes, q); }
+}
+
+/* ================= privacy-friendly analytics =================
+   No cookies, no IP addresses stored. Events are batched and sent with sendBeacon to the "track" function.
+   Skipped for Do Not Track, previews and the portal. */
+const TRACK_ON = () => USE_SB && !PRERENDER && navigator.doNotTrack!=="1" && window.doNotTrack!=="1" && !isLocalHost() && !curPath().startsWith("/admin");
+let tq=[], tTimer=null, lastPv="";
+function track(type,label){
+  if(!TRACK_ON()) return;
+  tq.push({t:type, p:curPath(), l:String(label||"").slice(0,200)});
+  if(tq.length>=20) flushTrack(); else if(!tTimer) tTimer=setTimeout(flushTrack,4000);
+}
+function flushTrack(){
+  clearTimeout(tTimer); tTimer=null; if(!tq.length) return;
+  const body=JSON.stringify({e:tq.splice(0,50), r: document.referrer && !document.referrer.startsWith(location.origin) ? document.referrer.slice(0,200) : "", w: innerWidth});
+  const url=SB_URL+"/functions/v1/track";
+  try{ if(!(navigator.sendBeacon && navigator.sendBeacon(url, new Blob([body],{type:"text/plain"})))) fetch(url,{method:"POST",body,keepalive:true,headers:{"Content-Type":"text/plain"}}).catch(()=>{}); }catch(e){}
+}
+function trackPageview(){ const p=curPath(); if(p===lastPv) return; lastPv=p; track("pv", document.title); if($(".nf")) track("404", p); }
+
 function openSearch(){ const s=$("#search"); if(!s) return; s.hidden=false; document.body.style.overflow="hidden"; setTimeout(()=>$("#searchq")?.focus(),30); }
 function closeSearch(){ const s=$("#search"); if(!s || s.hidden) return; s.hidden=true; document.body.style.overflow=""; }
 
@@ -542,6 +685,7 @@ function pageMeta(r){
   if(policy) return {title:policy.title+" · Rays Microfinance", description:policy.summary||""};
   if(r[0]==="legal") return {title:"Policies and legal information · Rays Microfinance", description:"Privacy, terms, complaints, security and other policies."};
   if(job) return {title:job.title+" · Careers at Rays", description:job.summary||""};
+  if(r.length===1){ const sec=site()?.sections?.find(s=>s.id===r[0]); if(sec) return {title:sec.title+" · Rays Microfinance", description:sec.intro||""}; }
   const known = !r.length || (r[0]==="media" ? (r[1]!=="post" || post) : r.length===1 ? site()?.sections?.some(s=>s.id===r[0]) : !!f);
   const title = !known ? "Page not found · Rays Microfinance" : f ? f.page.title+" · Rays Microfinance" : post ? post.title+" · Rays Microfinance" : r[0]==="media" ? "News and media · Rays Microfinance" : (brand.name||"Rays")+" · "+(brand.motto||"");
   const description = (f?.page?.lead) || post?.excerpt || brand.tagline || "";
@@ -553,7 +697,7 @@ function publicHTML(r){
   else if(r[0]==="media") main = r[1]==="post" ? viewPost(r[2]) : viewMedia(KINDS[r[1]]?r[1]:null);
   else if(r[0]==="legal") main = r[1] ? viewPolicy(r[1]) : viewLegalIndex();
   else if(r[0]==="about" && r[1]==="careers" && r[2]) main = viewJob(r[2]);
-  else if(r.length===1){ const sec=site().sections.find(s=>s.id===r[0]); main = sec ? viewPage(sec.id,sec.pages[0]?.id) : viewNotFound(); }
+  else if(r.length===1){ const sec=site().sections.find(s=>s.id===r[0]); main = sec ? viewHub(sec) : viewNotFound(); }
   else main=viewPage(r[0],r[1]);
   return toPaths(header()+`<main id="main">${main}</main>`+footer());
 }
@@ -570,7 +714,7 @@ function hydrate(){
   const app=$("#app"); if(!app || !app.querySelector("header.site") || route()[0]==="admin") return false;
   if(!route().length) startRain();
   afterRender();
-  if(S.maybeEditor || S.canEdit){ const tools=$(".bar .tools"); if(tools && !tools.querySelector(".portal")) tools.insertAdjacentHTML("beforeend",toPaths(`<a class="btn small ghost portal" href="#/admin">Portal</a>`)); }
+  if(S.maybeEditor || (S.canEdit && !(S.mode==="local" && !isLocalHost()))){ const tools=$(".bar .tools"); if(tools && !tools.querySelector(".portal")) tools.insertAdjacentHTML("beforeend",toPaths(`<a class="btn small ghost portal" href="#/admin">Portal</a>`)); }
   return true;
 }
 function render(scrollTop=true){
@@ -579,6 +723,11 @@ function render(scrollTop=true){
   if(r[0]==="admin"){
     if(rainStop){rainStop();rainStop=null}
     document.title="Portal · Rays";
+    if(S.mode==="local" && !isLocalHost()){
+      app.innerHTML = toPaths((site()?header():"")+`<section class="block"><div class="wrap"><h1 class="nf">The portal isn't connected yet.</h1>
+        <p class="lead" style="margin-top:12px">This website hasn't been linked to its content database, so editing is switched off. Site administrators: add <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> in Vercel, then redeploy.</p>
+        <p><a class="btn" href="#/">Back to the website</a></p></div></section>`+(site()?footer():"")); afterRender(); return;
+    }
     if(!window.RaysAdmin){ app.innerHTML=`<div class="loading">Opening the portal…</div>`; loadAdmin().then(()=>render(scrollTop)).catch(()=>{ app.innerHTML=`<div class="loading">The portal couldn't load. Check your connection and refresh.</div>`; }); return; }
     return window.RaysAdmin.render(app,r,scrollTop);
   }
@@ -591,6 +740,7 @@ function render(scrollTop=true){
   afterRender();
 }
 function afterRender(){
+  syncThemeUI(); mountTurnstile(); trackPageview();
   if($("[data-calc]")) runCalc();
   const an=$("#announce"); if(an && LS.get("annClosed")===an.dataset.text) an.remove();
 }
@@ -661,8 +811,8 @@ async function submitContact(e){
   const q={name:(fd.get("name")||"").trim().slice(0,120),reach:(fd.get("reach")||"").trim().slice(0,160),audience:fd.get("audience"),message:(fd.get("message")||"").trim().slice(0,4000),createdAt:new Date().toISOString(),handled:false};
   if(!q.name||!q.reach||!q.message){ msg.textContent="Fill in your name, a phone number or email, and your message."; return; }
   const btn=f.querySelector("button[type=submit]"); btn.disabled=true; msg.textContent="Sending…";
-  try{ await addInquiry(q); f.reset(); msg.textContent="Message sent. Our team will get back to you."; }
-  catch(err){ msg.textContent="Your message couldn't be sent. Check your connection and try again."; }
+  try{ await addInquiry(q); f.reset(); msg.textContent="Message sent. Our team will get back to you."; track("form","contact"); }
+  catch(err){ msg.textContent=err?.userMessage || "Your message couldn't be sent. Check your connection and try again."; }
   btn.disabled=false;
 }
 function closeDrawer(){ $("#drawer")?.classList.remove("open"); $(".menu-btn")?.setAttribute("aria-expanded","false"); document.body.style.overflow=""; }
@@ -679,6 +829,8 @@ if(!PRERENDER){
         nav(href); return;
       }
     }
+    const jp=e.target.closest("[data-jump]"); if(jp){ e.preventDefault(); document.getElementById(jp.dataset.jump)?.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}); return; }
+    const tp=e.target.closest("[data-theme-pick]"); if(tp){ applyTheme(tp.dataset.themePick); return; }
     const dropBtn=e.target.closest("[data-drop]");
     if(dropBtn){ const id=dropBtn.dataset.drop; S.openDrop = S.openDrop===id?null:id; document.querySelectorAll(".drop").forEach(d=>d.classList.toggle("open",d.id==="drop-"+S.openDrop)); document.querySelectorAll("[data-drop]").forEach(b=>b.setAttribute("aria-expanded",b.dataset.drop===S.openDrop)); return; }
     if(S.openDrop && !e.target.closest(".drop")){ S.openDrop=null; document.querySelectorAll(".drop.open").forEach(d=>d.classList.remove("open")); document.querySelectorAll("[data-drop]").forEach(b=>b.setAttribute("aria-expanded","false")); }
@@ -686,6 +838,7 @@ if(!PRERENDER){
     if(a.dataset.act==="drawer"){ $("#drawer")?.classList.add("open"); a.setAttribute("aria-expanded","true"); document.body.style.overflow="hidden"; return; }
     if(a.dataset.act==="drawer-close"){ closeDrawer(); return; }
     if(a.dataset.act==="search"){ openSearch(); return; }
+    if(a.dataset.act==="theme"){ applyTheme(effectiveTheme()==="dark"?"light":"dark"); return; }
     if(a.dataset.act==="search-close"){ closeSearch(); return; }
     if(a.dataset.act==="ann-close"){ const an=$("#announce"); if(an){ LS.set("annClosed",an.dataset.text); an.remove(); } return; }
     window.RaysAdmin?.act(a,e);
@@ -694,11 +847,21 @@ if(!PRERENDER){
     if(e.key==="/" && !e.target.matches?.("input,textarea,select")){ e.preventDefault(); openSearch(); return; }
     if(e.key==="Escape"){ closeSearch(); if(S.openDrop){ S.openDrop=null; document.querySelectorAll(".drop.open").forEach(d=>d.classList.remove("open")); } closeDrawer(); }
   });
-  document.addEventListener("submit",e=>{ if(e.target.id==="contact") submitContact(e); else if(e.target.id==="apply") submitApply(e); });
+  document.addEventListener("submit",e=>{
+    if(e.target.id==="contact") submitContact(e); else if(e.target.id==="apply") submitApply(e);
+    else if(e.target.dataset?.ask){ e.preventDefault(); const q=e.target.querySelector("input").value; ask(e.target.dataset.ask, q); if(e.target.dataset.ask==="overlay") $("#searchres").innerHTML=""; }
+  });
+  document.addEventListener("click",e=>{
+    const chip=e.target.closest("[data-askq]"); if(chip){ const w=chip.dataset.for; const inp=$("#ask-"+w); if(inp) inp.value=chip.dataset.askq; ask(w, chip.dataset.askq); return; }
+    const fb=e.target.closest("[data-fb]"); if(fb){ const box=fb.closest(".askout"); track("ask_feedback", fb.dataset.fb+": "+(box?.dataset.q||"")); fb.parentElement.innerHTML=`<span class="muted small">Thanks for the feedback.</span>`; return; }
+    const tr=e.target.closest("[data-track]"); if(tr) track("click", tr.dataset.track);
+    const out=e.target.closest("a[href^='http']"); if(out && !out.href.startsWith(location.origin)) track("outbound", out.href);
+  },true);
+  addEventListener("pagehide", flushTrack); document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") flushTrack(); });
   document.addEventListener("input",e=>{
     const t=e.target;
     if(t.dataset?.calc) runCalc();
-    else if(t.id==="searchq") runSearch(t.value);
+    else if(t.id==="searchq"){ runSearch(t.value); clearTimeout(window.__sq); window.__sq=setTimeout(()=>{ if(t.value.trim().length>2) track("search", t.value.trim()); },1500); }
     else if(t.id==="faqq"){ const q=t.value.toLowerCase().trim(); let n=0; document.querySelectorAll(".qa").forEach(d=>{ const hit=!q||d.textContent.toLowerCase().includes(q); d.hidden=!hit; if(hit){n++; if(q) d.open=true;} }); document.querySelectorAll(".faqcat").forEach(c=>c.hidden=![...c.querySelectorAll(".qa")].some(d=>!d.hidden)); const none=$("#faqnone"); if(none) none.hidden=n>0; }
   });
   document.addEventListener("change",e=>{
@@ -707,11 +870,12 @@ if(!PRERENDER){
   document.addEventListener("click",e=>{ if(e.target.closest("#searchres a")) closeSearch(); },true);
   // Warm the portal code when an editor shows intent, so it opens instantly.
   document.addEventListener("pointerover",e=>{ if(e.target.closest?.(".portal")) loadAdmin().catch(()=>{}); },{passive:true});
+  darkMQ?.addEventListener?.("change", syncThemeUI);
   boot();
 }
 
 /* shared with admin.js (loaded on demand) */
-window.Rays = { CFG, S, LS, $, esc, clone, uid, slug, blobUrl, thumbOf, toast, rich, nav, route, curPath, render, findPage, KINDS, site, logoImg, SB_URL, PATH_MODE, ASSET_BASE, IS_ARTIFACT, toPaths, fmtDate, canRerender, sbRest, mapPost, header, footer, lite, pubPolicies };
+window.Rays = { CFG, S, LS, $, esc, clone, uid, slug, blobUrl, thumbOf, toast, rich, nav, route, curPath, render, findPage, KINDS, site, logoImg, SB_URL, PATH_MODE, ASSET_BASE, IS_ARTIFACT, toPaths, fmtDate, canRerender, sbRest, mapPost, header, footer, lite, pubPolicies, mountTurnstile, tsToken, tsReset, tsBox, effectiveTheme, isLocalHost };
 
 /* ================= prerender entry (used by build.mjs in Node) ================= */
 if(PRERENDER){

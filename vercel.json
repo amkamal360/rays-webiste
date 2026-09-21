@@ -4,20 +4,186 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/payments/qpay",
+      "destination": "/business/qpay",
+      "permanent": true
+    },
+    {
+      "source": "/payments/:rest*",
+      "destination": "/business",
+      "permanent": true
+    },
+    {
+      "source": "/payments",
+      "destination": "/business",
+      "permanent": true
+    },
+    {
+      "source": "/infrastructure/:rest*",
+      "destination": "/partners/build",
+      "permanent": true
+    },
+    {
+      "source": "/infrastructure",
+      "destination": "/partners",
+      "permanent": true
+    },
+    {
+      "source": "/platforms/sahaypay",
+      "destination": "/personal/payments",
+      "permanent": true
+    },
+    {
+      "source": "/platforms/qpay",
+      "destination": "/business/qpay",
+      "permanent": true
+    },
+    {
+      "source": "/platforms/emurabaha",
+      "destination": "/financing/emurabaha",
+      "permanent": true
+    },
+    {
+      "source": "/platforms/finsharia",
+      "destination": "/partners/finsharia",
+      "permanent": true
+    },
+    {
+      "source": "/platforms",
+      "destination": "/partners",
+      "permanent": true
+    },
+    {
+      "source": "/personal/savings",
+      "destination": "/personal/accounts",
+      "permanent": true
+    },
+    {
+      "source": "/personal/atm",
+      "destination": "/personal/cards",
+      "permanent": true
+    },
+    {
+      "source": "/personal/cheques",
+      "destination": "/personal/cards",
+      "permanent": true
+    },
+    {
+      "source": "/business/msme",
+      "destination": "/business/accounts",
+      "permanent": true
+    },
+    {
+      "source": "/business/collections",
+      "destination": "/business/qpay",
+      "permanent": true
+    },
+    {
+      "source": "/business/payments",
+      "destination": "/business/payroll",
+      "permanent": true
+    },
+    {
+      "source": "/business/financing",
+      "destination": "/financing",
+      "permanent": true
+    },
+    {
+      "source": "/about/infrastructure",
+      "destination": "/partners/build",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/_app.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/_app.html"
+    }
   ],
   "headers": [
-    { "source": "/assets/(app|admin)\\.(.*)\\.js", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
-    { "source": "/assets/brand/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }] },
-    { "source": "/icons/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
-    { "source": "/(.*)", "headers": [
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-      { "key": "X-Frame-Options", "value": "DENY" },
-      { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-      { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains" },
-      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://use.typekit.net; style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net; font-src 'self' data: https://use.typekit.net; img-src 'self' data: blob: https://*.supabase.co https://p.typekit.net; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" }
-    ]}
+    {
+      "source": "/admin(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/llms(.*).txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(app|admin)\\.(.*)\\.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/brand/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/icons/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'sha256-z46QHqelXan+CbJwIzfU5DRjIXsXmQeDCuEKutHU9/E=' https://cdn.jsdelivr.net https://use.typekit.net https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net; font-src 'self' data: https://use.typekit.net; img-src 'self' data: blob: https://*.supabase.co https://p.typekit.net; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+        }
+      ]
+    }
   ]
 }

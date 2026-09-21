@@ -5,5 +5,6 @@ window.RAYS_CONFIG = {
   supabaseUrl: "",
   supabaseAnonKey: "",
   mediaBucket: "media",
-  adobeFontsKit: ""
+  adobeFontsKit: "",
+  turnstileSiteKey: ""   // Cloudflare Turnstile site key (public). Prefer the TURNSTILE_SITE_KEY env var on Vercel.
 };

@@ -1,0 +1,64 @@
+# Deploys the Supabase side of the Rays website whenever supabase/** changes on main:
+# database migrations, Edge Functions (submit, ask, track) and their secrets.
+# Vercel deploys the website itself from the same push.
+#
+# One-time setup in GitHub → Settings → Secrets and variables → Actions:
+#   Secrets:   SUPABASE_ACCESS_TOKEN  (supabase.com → Account → Access Tokens)
+#              SUPABASE_DB_PASSWORD   (the database password you chose)
+#              SUPABASE_PROJECT_REF   (Project Settings → General → Project ID)
+#              TURNSTILE_SECRET_KEY   (optional, Cloudflare Turnstile secret)
+#              ANTHROPIC_API_KEY      (optional, turns on AI answers)
+#   Variables: ALLOWED_ORIGINS        e.g. https://raysfinance.com,https://www.raysfinance.com,https://rays-webiste.vercel.app
+name: Supabase
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/supabase.yml"]
+  workflow_dispatch:
+
+concurrency: supabase-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check setup
+        run: |
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD PROJECT_REF; do
+            if [ -z "${!v}" ]; then echo "::error::Missing $v. Add it under Settings → Secrets and variables → Actions."; exit 1; fi
+          done
+
+      - name: Link project
+        run: supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Apply database migrations
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD" --include-all
+
+      - name: Set function secrets
+        env:
+          ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          args=()
+          for v in ALLOWED_ORIGINS TURNSTILE_SECRET_KEY ANTHROPIC_API_KEY; do
+            if [ -n "${!v}" ]; then args+=("$v=${!v}"); fi
+          done
+          if [ ${#args[@]} -gt 0 ]; then supabase secrets set --project-ref "$PROJECT_REF" "${args[@]}"; fi
+
+      - name: Deploy Edge Functions
+        run: |
+          for fn in submit ask track; do
+            supabase functions deploy "$fn" --project-ref "$PROJECT_REF" --no-verify-jwt
+          done
