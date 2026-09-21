@@ -327,7 +327,10 @@ function viewHub(sec){
     <div class="crumb"><a href="#/">Rays</a></div><h1>${esc(sec.title)}</h1><p class="lead">${esc(sec.intro)}</p>
     ${sec.pages.length>1?`<nav class="jump" aria-label="On this page">${sec.pages.map(p=>`<a href="#${esc(p.id)}" data-jump="${esc(p.id)}">${esc(p.title)}</a>`).join("")}</nav>`:""}</div></section>
   <section class="block pagebody"><div class="wrap hub">
-    ${sec.pages.map(p0=>{ const p=findPage(sec.id,p0.id)?.page||p0; const facts=(p.features||[]).slice(0,4);
+    ${sec.pages.map(p0=>{ const p=findPage(sec.id,p0.id)?.page||p0;
+      const facts = p.kind==="group" ? (site()?.group?.companies||[]).map(c=>({title:c.name, text:c.product}))
+        : p.kind==="partners" ? [{title:"Partners", text:(site()?.partners||[]).map(x=>x.name).join(", ")}]
+        : (p.features||[]).slice(0,4);
       return `<article class="hubitem" id="${esc(p0.id)}">
         <div><h2>${esc(p.title)}</h2><p class="lead">${esc(p.lead||"")}</p>
           ${facts.length?`<ul class="facts">${facts.map(f=>`<li><b>${esc(f.title)}</b> ${esc(f.text)}</li>`).join("")}</ul>`:""}</div>
@@ -357,7 +360,7 @@ function viewPage(secId,pageId){
     ${page.features?.length?`<div class="feat">${page.features.map(x=>`<div><h2>${esc(x.title)}</h2><p>${esc(x.text)}</p></div>`).join("")}</div>`:""}
     ${page.list?.length?`<ul class="twocol">${page.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
     ${page.calculator?calculatorBlock():""}
-    ${page.kind==="contact"?contactForm():page.kind==="faq"?faqBlock():page.kind==="locations"?locationsBlock():page.kind==="downloads"?downloadsBlock():page.kind==="careers"?careersBlock():""}
+    ${page.kind==="contact"?contactForm():page.kind==="faq"?faqBlock():page.kind==="locations"?locationsBlock():page.kind==="downloads"?downloadsBlock():page.kind==="careers"?careersBlock():page.kind==="group"?groupBlock():page.kind==="partners"?partnersBlock():""}
     ${page.cta?.label?`<div class="cta-row"><a class="btn" href="${esc(safeHref(page.cta.href))}">${esc(page.cta.label)}</a></div>`:""}
   </div></section>`;
 }
@@ -371,7 +374,7 @@ function contactForm(){
     <form id="contact" novalidate>
       <div class="formgrid"><label class="f"><span>Your name</span><input type="text" name="name" required autocomplete="name"></label>
       <label class="f"><span>Phone or email</span><input type="text" name="reach" required autocomplete="tel" inputmode="tel"></label></div>
-      <label class="f"><span>I'm contacting Rays as</span><select name="audience"><option>An individual</option><option>A business or MSME</option><option>A financial institution</option><option>A fintech or developer</option><option>A job applicant</option><option>Media</option></select></label>
+      <label class="f"><span>I'm contacting Rays as</span><select name="audience"><option>An individual</option><option>A business or MSME</option><option>A merchant (QPay)</option><option>A bank or MFI (white-label wallet)</option><option>A fintech, PSP or payment gateway (Banking as a Service)</option><option>An NGO or development partner</option><option>A job applicant</option><option>Media</option></select></label>
       <label class="f"><span>How can we help?</span><textarea name="message" required maxlength="4000"></textarea></label>
       <label class="hp" aria-hidden="true">Leave empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
       ${tsBox("contact")}
@@ -491,6 +494,26 @@ function downloadsBlock(){
   const cats=[...new Set(list.map(d=>d.category||"Documents"))];
   return cats.map(cat=>`<h2 class="sub">${esc(cat)}</h2><ul class="dl">${list.filter(d=>(d.category||"Documents")===cat).map(d=>`<li><a href="${esc(blobUrl(d.mediaId))}" target="_blank" rel="noopener" download><b>${esc(d.title)}</b><span>${esc(d.format||"PDF")}${d.size?` · ${esc(d.size)}`:""}</span></a></li>`).join("")}</ul>`).join("");
 }
+/* ---------- the Rays group and partners ---------- */
+const operatorOf = c => c.operator || "a Rays company";
+function groupBlock(){
+  const g=site()?.group; if(!g?.companies?.length) return "";
+  return `${g.intro?`<p class="lead" style="margin-top:0">${esc(g.intro)}</p>`:""}
+    <div class="group">${g.companies.map((c,i)=>`<article class="co${i===0?" owner":""}">
+      <p class="co-kind">${i===0?"Owner":"Operated by "+esc(operatorOf(c))}</p>
+      <h2>${esc(c.name)}</h2><p class="co-prod">${esc(c.product)}</p>
+      <p>${esc(c.text)}</p>
+      <p class="muted small"><b>For:</b> ${esc(c.for)}</p>
+      ${c.cta&&c.href?`<a class="btn small ${i===0?"yellow":""}" href="${esc(safeHref(c.href))}" data-track="group:${esc(c.name)}">${esc(c.cta)}</a>`:""}</article>`).join("")}</div>`;
+}
+function partnersBlock(){
+  const list=site()?.partners||[]; if(!list.length) return `<div class="empty">Partners will be listed here soon.</div>`;
+  const cats=[...new Set(list.map(p=>p.category||"Partners"))];
+  return cats.map(cat=>`<h2 class="sub">${esc(cat)}</h2><div class="partners">${list.filter(p=>(p.category||"Partners")===cat).map(p=>{
+    const inner=`${p.mediaId?`<img src="${esc(blobUrl(p.mediaId))}" alt="" loading="lazy" decoding="async">`:""}<b>${esc(p.name)}</b>${p.text?`<span>${esc(p.text)}</span>`:""}`;
+    return p.url?`<a class="partner" href="${esc(safeHref(p.url))}" target="_blank" rel="noopener">${inner}</a>`:`<div class="partner">${inner}</div>`; }).join("")}</div>`).join("");
+}
+
 function careersBlock(){
   const jobs=openJobs();
   return `<h2 class="sub">Open roles</h2>${jobs.length?`<div class="jobs">${jobs.map(j=>`<a class="job" href="#/about/careers/${esc(j.id)}"><h3>${esc(j.title)}</h3><p class="muted">${esc([j.department,j.location,j.type].filter(Boolean).join(" · "))}</p>${j.summary?`<p>${esc(j.summary)}</p>`:""}${j.closes?`<p class="muted small">Apply by ${esc(fmtDate(j.closes))}</p>`:""}</a>`).join("")}</div>`
@@ -591,6 +614,8 @@ function searchIndex(){
   const out=[];
   for(const sec of s.sections||[]) for(const p of sec.pages){ if(p.ref) continue; out.push({t:p.title,s:sec.title,d:p.lead,x:[p.lead,p.body,(p.features||[]).map(f=>f.title+" "+f.text).join(" "),(p.list||[]).join(" ")].join(" "),h:pageHref(sec.id,p.id)}); }
   for(const f of s.faqs||[]) out.push({t:f.q,s:"Help",x:f.a,h:"#/about/help"});
+  for(const c of s.group?.companies||[]) out.push({t:c.name,s:"Rays group",d:`${c.name}: ${c.product}, operated by ${operatorOf(c)}. ${c.text}`,x:[c.product,c.operator,c.for,c.text].join(" "),h:c.href||"#/partners/group"});
+  if((s.partners||[]).length) out.push({t:"Our partners",s:"Partner with Us",d:(s.partners||[]).map(p=>p.name).join(", "),x:(s.partners||[]).map(p=>p.name+" "+p.category).join(" "),h:"#/partners/partnerships"});
   for(const p of pubPolicies()) out.push({t:p.title,s:"Legal",d:p.summary,x:p.summary+" "+(p.body||""),h:"#/legal/"+p.id});
   for(const j of openJobs()) out.push({t:j.title,s:"Careers",x:[j.department,j.location,j.summary].join(" "),h:"#/about/careers/"+j.id});
   for(const p of published()) out.push({t:p.title,s:"News",x:(p.excerpt||"")+" "+(p.body||""),h:"#/media/post/"+p.id});

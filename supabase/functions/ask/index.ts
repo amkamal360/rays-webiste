@@ -29,6 +29,11 @@ async function content() {
     chunks.push({ title: p.title, href: `/${sec.id}/${p.id}`, text: [p.lead, p.body, feats, steps, (p.list ?? []).join(", ")].filter(Boolean).join("\n") });
   }
   for (const f of s.faqs ?? []) chunks.push({ title: f.q, href: "/about/help", text: f.a });
+  const g = s.group?.companies ?? [];
+  if (g.length) chunks.push({ title: "The Rays group: who owns and operates what", href: "/partners/group",
+    text: `${s.group.intro ?? ""}\n` + g.map((c: any) => `${c.name} (${c.product}) is operated by ${c.operator || "a Rays company"}; for ${c.for}. ${c.text}`).join("\n") });
+  if ((s.partners ?? []).length) chunks.push({ title: "Rays partners", href: "/partners/partnerships",
+    text: (s.partners as any[]).map((p) => `${p.name}: ${p.category}${p.text ? ". " + p.text : ""}`).join("\n") });
   for (const p of (s.policies ?? []).filter((p: any) => p.published !== false)) {
     const parts = String(p.body ?? "").split(/\n(?=## )/);
     for (const part of parts) {

@@ -24,8 +24,8 @@ insert into public.site (id, data) values ('content', $rays${
     "href": "#/financing"
    },
    {
-    "title": "Infrastructure",
-    "text": "The wallet, payments and core banking platforms behind 5M+ customers, available to partners.",
+    "title": "Partner with us",
+    "text": "Banking as a Service for fintechs and PSPs, white-label wallets with SahayPay, and merchant payments with QPay.",
     "href": "#/partners"
    }
   ],
@@ -33,7 +33,7 @@ insert into public.site (id, data) values ('content', $rays${
   "suggestions": [
    "How do I open an account?",
    "How does eMurabaha work?",
-   "Can I use SahayPay without a smartphone?",
+   "Is SahayPay part of Rays?",
    "How do I report fraud?"
   ],
   "tasks": [
@@ -132,7 +132,7 @@ insert into public.site (id, data) values ('content', $rays${
      "id": "payments",
      "title": "SahayPay wallet",
      "lead": "Send money, pay merchants, buy airtime and pay bills from one wallet, on the app or by USSD on any phone.",
-     "body": "SahayPay works across mobile networks. Cash in and out at thousands of agents.",
+     "body": "SahayPay is operated by SahayPay Financial Technologies PLC, a Rays company. It works across mobile networks, and you can cash in and out at thousands of agents.",
      "features": [
       {
        "title": "Send money",
@@ -208,7 +208,7 @@ insert into public.site (id, data) values ('content', $rays${
      "id": "qpay",
      "title": "QPay: accept payments",
      "lead": "Accept QR and digital payments, then settle them straight into your account.",
-     "body": "QPay is Rays' merchant collection and business payment platform.",
+     "body": "QPay is Rays' merchant payments platform, operated by a Rays company. Want to become a QPay merchant? See Partner with QPay.",
      "features": [
       {
        "title": "QR payments",
@@ -224,8 +224,8 @@ insert into public.site (id, data) values ('content', $rays${
       }
      ],
      "cta": {
-      "label": "Start with QPay",
-      "href": "#/about/contact"
+      "label": "Partner with QPay",
+      "href": "#/partners/merchants"
      }
     },
     {
@@ -346,53 +346,44 @@ insert into public.site (id, data) values ('content', $rays${
   },
   {
    "id": "partners",
-   "title": "Partners",
+   "title": "Partner with Us",
    "nav": true,
-   "intro": "The platforms behind Rays, available to banks, fintechs and developers.",
+   "intro": "Rays owns a fintech hub. Pick the company that fits what you want to build.",
    "pages": [
     {
-     "id": "build",
-     "title": "Build with Rays",
-     "lead": "Launch financial products on infrastructure that already runs real money: accounts, payments, wallets, financing and settlement through our APIs.",
-     "body": "Rays built its technology in-house to operate financial services at scale. Partners integrate through APIs and middleware with the controls financial transactions need.",
+     "id": "group",
+     "title": "The Rays group",
+     "kind": "group",
+     "lead": "Rays Microfinance owns the group. SahayPay, QPay, eMurabaha and FinSharia are each operated by a Rays company.",
+     "body": "Customers, merchants and partners get one connected ecosystem, with a clear owner for every platform.",
+     "cta": {
+      "label": "Talk to us",
+      "href": "#/about/contact"
+     }
+    },
+    {
+     "id": "baas",
+     "title": "Banking as a Service",
+     "lead": "For fintechs, tech companies, PSPs and payment gateways: build on Rays' licensed banking layer through our APIs.",
+     "body": "Rays provides the regulated accounts, settlement and payment connectivity, so you can focus on your product. Rays holds a National Settlement Account and connects to EthSwitch, major banks and mobile money.",
      "features": [
       {
-       "title": "APIs",
-       "text": "Accounts, payments, collections, wallets and financing."
+       "title": "Accounts and wallets",
+       "text": "Open and run accounts for your customers."
       },
       {
-       "title": "Merchant services",
-       "text": "QR acceptance and collections."
+       "title": "Collections and disbursements",
+       "text": "Receive and pay out at scale."
       },
       {
-       "title": "Financing journeys",
-       "text": "Digital origination on eMurabaha."
+       "title": "Settlement",
+       "text": "Through Rays' National Settlement Account."
       },
       {
-       "title": "Controls built in",
-       "text": "Limits, idempotency, audit trails."
+       "title": "APIs with controls",
+       "text": "Limits, idempotency and audit trails built in."
       }
      ],
-     "cta": {
-      "label": "Talk to our infrastructure team",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "white-label",
-     "title": "White-label wallet",
-     "lead": "Run a modern wallet under your own brand on SahayPay, the platform already powering 5M+ registered customers at two institutions.",
-     "body": "Your institution, your customers, your brand, on Rays infrastructure.",
-     "cta": {
-      "label": "Partner with Rays",
-      "href": "#/about/contact"
-     }
-    },
-    {
-     "id": "connectivity",
-     "title": "Connectivity and settlement",
-     "lead": "Rays holds a National Settlement Account and connects to EthSwitch, major banks and mobile money.",
-     "body": "Among the few microfinance institutions in Ethiopia with this level of connectivity.",
      "list": [
       "National banking infrastructure",
       "EthSwitch",
@@ -404,15 +395,67 @@ insert into public.site (id, data) values ('content', $rays${
       "Telebirr"
      ],
      "cta": {
-      "label": "Build with Rays",
-      "href": "#/partners/build"
+      "label": "Talk to Rays about BaaS",
+      "href": "#/about/contact"
+     }
+    },
+    {
+     "id": "white-label",
+     "title": "White-label wallet: partner with SahayPay",
+     "lead": "Banks and MFIs can launch a wallet under their own brand on SahayPay, already live with Hijra Bank and Rammis Bank.",
+     "body": "SahayPay is operated by SahayPay Financial Technologies PLC, a Rays company. You keep your brand and customers; SahayPay runs the platform: app, USSD, agents and merchants.",
+     "features": [
+      {
+       "title": "Your brand",
+       "text": "Your name and app, your customers."
+      },
+      {
+       "title": "Proven platform",
+       "text": "Powering deployments with 5M+ registered users."
+      },
+      {
+       "title": "App and USSD",
+       "text": "Works on smartphones and basic phones."
+      },
+      {
+       "title": "Agents and merchants",
+       "text": "Cash-in, cash-out and payments built in."
+      }
+     ],
+     "cta": {
+      "label": "Partner with SahayPay",
+      "href": "#/about/contact"
+     }
+    },
+    {
+     "id": "merchants",
+     "title": "Merchants: partner with QPay",
+     "lead": "Shops, businesses and institutions accept QR and digital payments with QPay and get settled into their account.",
+     "body": "QPay is operated by a Rays company. It also handles bulk, salary and supplier payments.",
+     "features": [
+      {
+       "title": "Accept QR payments",
+       "text": "Customers scan and pay."
+      },
+      {
+       "title": "Fast settlement",
+       "text": "Into your account."
+      },
+      {
+       "title": "Pay out",
+       "text": "Salaries, suppliers and bulk payments."
+      }
+     ],
+     "cta": {
+      "label": "Partner with QPay",
+      "href": "#/about/contact"
      }
     },
     {
      "id": "finsharia",
      "title": "FinSharia core banking",
-     "lead": "Our in-house ethical core banking platform: ledger, accounts, financing structures, controls and reporting.",
-     "body": "Because we build it ourselves, the core evolves with our products.",
+     "lead": "The in-house ethical core banking platform behind the group: ledger, accounts, financing structures, controls and reporting.",
+     "body": "FinSharia is developed and operated by a Rays company, so the core evolves with our products.",
      "list": [
       "Customer management",
       "Accounts and transactions",
@@ -427,6 +470,17 @@ insert into public.site (id, data) values ('content', $rays${
      ],
      "cta": {
       "label": "Talk to us",
+      "href": "#/about/contact"
+     }
+    },
+    {
+     "id": "partnerships",
+     "title": "Our partners",
+     "kind": "partners",
+     "lead": "Development partners, banks and businesses we work with.",
+     "body": "Want to work with us? Tell us what you have in mind.",
+     "cta": {
+      "label": "Become a partner",
       "href": "#/about/contact"
      }
     }
@@ -574,6 +628,11 @@ insert into public.site (id, data) values ('content', $rays${
  ],
  "faqs": [
   {
+   "q": "Are SahayPay, QPay, eMurabaha and FinSharia part of Rays?",
+   "a": "Yes. Rays Microfinance owns a fintech hub, and each platform is operated by a Rays company: SahayPay by SahayPay Financial Technologies PLC, and QPay, eMurabaha and FinSharia by other Rays companies. See The Rays group page for who does what.",
+   "category": "About Rays"
+  },
+  {
    "q": "How do I open an account?",
    "a": "You can start digitally or visit any Rays branch. Bring a valid identification document. Once your account is approved, Rays can arrange delivery of your ATM card and cheque book to your address within Ethiopia.",
    "category": "Accounts"
@@ -619,8 +678,18 @@ insert into public.site (id, data) values ('content', $rays${
    "category": "Support"
   },
   {
-   "q": "Can my institution use SahayPay or Rays infrastructure?",
-   "a": "Yes. Rays offers white-label wallets, payment infrastructure, APIs and connectivity to banks, microfinance institutions and fintechs. Contact our infrastructure team.",
+   "q": "Our bank or MFI wants its own wallet. Who do we talk to?",
+   "a": "Partner with SahayPay for a white-label wallet under your own brand. SahayPay already powers wallets for Hijra Bank and Rammis Bank. Contact us and choose \"A bank or MFI\".",
+   "category": "Partners"
+  },
+  {
+   "q": "I'm a merchant. How do I start accepting payments?",
+   "a": "Partner with QPay to accept QR and digital payments and get settled into your account. Contact us and choose \"A merchant\".",
+   "category": "Partners"
+  },
+  {
+   "q": "We're a fintech, PSP or payment gateway. How can we work with Rays?",
+   "a": "Talk to Rays about Banking as a Service: accounts, collections, disbursements and settlement through our APIs, on a licensed banking layer. Contact us and choose \"A fintech, PSP or payment gateway\".",
    "category": "Partners"
   }
  ],
@@ -697,9 +766,103 @@ insert into public.site (id, data) values ('content', $rays${
    "reviewed": false,
    "body": "We want everyone to be able to use this website, including people who use screen readers, keyboard navigation, larger text or reduced motion.\n\n## What we do\n- We aim to meet the Web Content Accessibility Guidelines (WCAG) 2.1 at level AA\n- Pages work without a mouse, and focus is always visible\n- Animation is reduced or removed if your device asks for less motion\n- Pages are light and fast, so they work well on basic smartphones and slower connections\n\n## Tell us about a problem\nIf you find something hard to use, contact us and tell us the page and what happened. We'll work to fix it."
   }
+ ],
+ "group": {
+  "intro": "Rays Microfinance owns a fintech hub. Each platform is run by its own Rays company, so you always know who to talk to.",
+  "companies": [
+   {
+    "name": "Rays Microfinance",
+    "product": "Banking and Banking as a Service",
+    "operator": "Rays Microfinance Institution S.C.",
+    "for": "Individuals, businesses, fintechs, tech companies, PSPs and payment gateways",
+    "text": "Accounts, savings, financing, payments, settlement and the licensed banking layer behind the group.",
+    "href": "#/partners/baas",
+    "cta": "Banking as a Service"
+   },
+   {
+    "name": "SahayPay",
+    "product": "Digital wallet",
+    "operator": "SahayPay Financial Technologies PLC",
+    "for": "Wallet users, and banks and MFIs that want their own wallet",
+    "text": "The telco-agnostic wallet (app and USSD), also offered to institutions as a white-label wallet.",
+    "href": "#/partners/white-label",
+    "cta": "Partner with SahayPay"
+   },
+   {
+    "name": "QPay",
+    "product": "Merchant payments",
+    "operator": "",
+    "for": "Merchants, businesses and institutions",
+    "text": "QR acceptance, collections, settlement, bulk and supplier payments.",
+    "href": "#/partners/merchants",
+    "cta": "Partner with QPay"
+   },
+   {
+    "name": "eMurabaha",
+    "product": "Digital financing",
+    "operator": "",
+    "for": "Individuals and MSMEs",
+    "text": "Digital origination, verification and scoring for Sharia-compliant Murabaha financing.",
+    "href": "#/financing/emurabaha",
+    "cta": "Apply with eMurabaha"
+   },
+   {
+    "name": "FinSharia",
+    "product": "Core banking",
+    "operator": "",
+    "for": "Financial institutions",
+    "text": "The in-house ethical core banking platform: ledger, accounts, financing structures and controls.",
+    "href": "#/partners/finsharia",
+    "cta": "About FinSharia"
+   }
+  ]
+ },
+ "partners": [
+  {
+   "name": "Mercy Corps",
+   "category": "NGOs and development partners",
+   "text": "",
+   "url": "",
+   "mediaId": ""
+  },
+  {
+   "name": "SNV",
+   "category": "NGOs and development partners",
+   "text": "",
+   "url": "",
+   "mediaId": ""
+  },
+  {
+   "name": "Hijra Bank",
+   "category": "Banks running a white-label SahayPay wallet",
+   "text": "",
+   "url": "",
+   "mediaId": ""
+  },
+  {
+   "name": "Rammis Bank",
+   "category": "Banks running a white-label SahayPay wallet",
+   "text": "",
+   "url": "",
+   "mediaId": ""
+  },
+  {
+   "name": "HudHud Express",
+   "category": "Business partners",
+   "text": "",
+   "url": "",
+   "mediaId": ""
+  },
+  {
+   "name": "CommercePal",
+   "category": "Business partners",
+   "text": "",
+   "url": "",
+   "mediaId": ""
+  }
  ]
 }$rays$::jsonb)
 on conflict (id) do update set data = excluded.data, updated_at = now();
 
-insert into public.posts (id, data, published, date) values ('welcome', $rays${"title": "SahayPay now powers 5 million+ wallet customers", "kind": "article", "excerpt": "Two financial institutions now run white-label deployments of SahayPay, Rays' in-house digital wallet.", "body": "SahayPay, the telco-agnostic digital wallet built and operated by Rays, now powers wallet deployments serving a combined 5 million+ registered customers.\n\nFinancial institutions can deploy SahayPay under their own brand without building the underlying platform themselves.", "coverId": "", "videoId": "", "mediaIds": []}$rays$::jsonb, true, '2026-09-21')
-on conflict (id) do nothing;
+insert into public.posts (id, data, published, date) values ('welcome', $rays${"title": "SahayPay now powers 5 million+ wallet customers", "kind": "article", "excerpt": "Hijra Bank and Rammis Bank run white-label wallets on SahayPay, the digital wallet operated by SahayPay Financial Technologies PLC, a Rays company.", "body": "SahayPay, the telco-agnostic digital wallet operated by SahayPay Financial Technologies PLC, now powers wallet deployments serving a combined 5 million+ registered customers.\n\nBanks and MFIs can launch a wallet under their own brand without building the platform themselves. See Partner with Us.", "coverId": "", "videoId": "", "mediaIds": []}$rays$::jsonb, true, '2026-09-21')
+on conflict (id) do update set data = excluded.data;

@@ -94,12 +94,22 @@
       "source": "/about/infrastructure",
       "destination": "/partners/build",
       "permanent": true
+    },
+    {
+      "source": "/partners/build",
+      "destination": "/partners/baas",
+      "permanent": true
+    },
+    {
+      "source": "/partners/connectivity",
+      "destination": "/partners/baas",
+      "permanent": true
     }
   ],
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/_app.html"
+      "source": "/admin/:path*",
+      "destination": "/admin.html"
     }
   ],
   "headers": [

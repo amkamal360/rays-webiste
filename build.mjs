@@ -110,7 +110,9 @@ const orgLd = { "@context": "https://schema.org", "@type": "FinancialService", n
   description: brand.tagline || "", slogan: brand.tagline2 || undefined, areaServed: "ET", foundingDate: "2014",
   address: contact.address ? { "@type": "PostalAddress", streetAddress: contact.address, addressCountry: "ET" } : undefined,
   telephone: contact.phone || undefined, email: contact.email || undefined,
-  sameAs: Object.values(social).filter(Boolean).map(v => /^https?:/.test(v) ? v : "https://t.me/" + String(v).replace(/^@/, "")) };
+  sameAs: Object.values(social).filter(Boolean).map(v => /^https?:/.test(v) ? v : "https://t.me/" + String(v).replace(/^@/, "")),
+  // the group: platforms and the Rays companies that operate them
+  subOrganization: (data.site.group?.companies || []).slice(1).map(c => ({ "@type": "Organization", name: c.operator || c.name, brand: c.name, description: `${c.product}. ${c.text}` })) };
 
 const escAttr = s => String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 const jsonBlock = (id, o) => `<script type="application/json" id="${id}">${JSON.stringify(o).replace(/</g, "\\u003c").replace(/\u2028|\u2029/g, "")}</script>`;
@@ -189,8 +191,12 @@ for (const r of routes) {
   const doc = page(out, r); bytes += doc.length;
   await writeFile(file, doc);
 }
-// Fallback for routes that aren't prerendered yet (the portal, pages added since the last build)
-await writeFile(`${OUT}/_app.html`, page({ html: "", title: "Rays Microfinance", description: data.site.brand?.tagline || "" }, "/_app"));
+// App shells for routes that aren't prerendered: the portal, and a real 404 page
+// (which also renders pages added in the portal since the last build).
+const shell = page({ html: "", title: "Rays Microfinance", description: data.site.brand?.tagline || "" }, "/_app");
+await writeFile(`${OUT}/admin.html`, shell.replace("<title>Rays Microfinance</title>", "<title>Portal · Rays</title>\n<meta name=\"robots\" content=\"noindex, nofollow\">"));
+await writeFile(`${OUT}/404.html`, shell);
+await writeFile(`${OUT}/app-shell.html`, shell);
 
 // ---------- SEO ----------
 const today = new Date().toISOString().slice(0, 10);
@@ -199,6 +205,7 @@ await writeFile(`${OUT}/robots.txt`, `# Search engines and AI assistants are wel
 
 // ---------- AEO: llms.txt (short map) and llms-full.txt (all public content as plain text) ----------
 const plain = s => String(s || "").replace(/\*\*/g, "");
+const lc = s => String(s || "").replace(/^[A-Z](?=[a-z])/, m => m.toLowerCase());
 const L = [];
 L.push(`# ${brand.name}`, "", `> ${brand.tagline}`, "",
   `Rays Microfinance is a regulated microfinance institution in Ethiopia, established in 2014. It offers accounts, interest-free (Sharia-compliant) financing, payments and financial infrastructure. ${(data.site.stats || []).map(x => `${x.label}: ${x.value}`).join("; ")}.`, "");
@@ -207,6 +214,12 @@ for (const s of data.site.sections || []) {
   for (const p of s.pages) { const f = s.pages.find(x => x.id === p.id); L.push(`- [${p.title}](${SITE_URL}/${s.id}/${p.id}): ${plain(f.lead || "")}`); }
   L.push("");
 }
+if (data.site.group?.companies?.length) {
+  L.push("## The Rays group", "", plain(data.site.group.intro), "");
+  for (const c of data.site.group.companies) L.push(`- ${c.name} (${c.product}): operated by ${(c.operator || "a Rays company").replace(/\.$/, "")}. For ${lc(c.for)}. ${plain(c.text)}`);
+  L.push("");
+}
+if ((data.site.partners || []).length) L.push("## Partners", "", ...[...new Set(data.site.partners.map(p => p.category))].map(cat => `- ${cat}: ${data.site.partners.filter(p => p.category === cat).map(p => p.name).join(", ")}`), "");
 L.push("## Help and policies", "", `- [Help and FAQs](${SITE_URL}/about/help): ${(data.site.faqs || []).length} common questions with answers`);
 for (const p of (data.site.policies || []).filter(p => p.published !== false)) L.push(`- [${p.title}](${SITE_URL}/legal/${p.id}): ${plain(p.summary)}`);
 L.push("", "## Optional", "", `- [Full text of this site](${SITE_URL}/llms-full.txt)`, `- [News](${SITE_URL}/media)`, "");
@@ -221,6 +234,8 @@ for (const s of data.site.sections || []) for (const p of s.pages) {
   for (const x of p.list || []) F.push(`- ${x}`);
   F.push("");
 }
+if (data.site.group?.companies?.length) { F.push("## The Rays group", `URL: ${SITE_URL}/partners/group`, "", plain(data.site.group.intro)); for (const c of data.site.group.companies) F.push(`- ${c.name}: ${c.product}. Operated by ${(c.operator || "a Rays company").replace(/\.$/, "")}. For ${lc(c.for)}. ${plain(c.text)}`); F.push(""); }
+if ((data.site.partners || []).length) { F.push("## Partners", `URL: ${SITE_URL}/partners/partnerships`, ""); for (const p of data.site.partners) F.push(`- ${p.name} (${p.category})${p.text ? ": " + p.text : ""}`); F.push(""); }
 F.push("## Frequently asked questions", `URL: ${SITE_URL}/about/help`, "");
 for (const f of data.site.faqs || []) F.push(`### ${f.q}`, plain(f.a), "");
 for (const p of (data.site.policies || []).filter(p => p.published !== false)) F.push(`## ${p.title}`, `URL: ${SITE_URL}/legal/${p.id}`, "", plain(p.body).replace(/^## /gm, "### "), "");

@@ -159,7 +159,7 @@ function shell(active,inner){
   return `<div class="admin"><aside>
     <a class="logo" href="#/">${logoImg(true)}</a>
     ${item("#/admin","Overview")}${item("#/admin/insights","Insights")}
-    <div class="grp">Website</div>${item("#/admin/home","Home page")}${item("#/admin/stats","Figures")}${item("#/admin/settings","Brand, contact and links")}${item("#/admin/faqs","Help and FAQs")}${item("#/admin/branches","Branches and agents")}${item("#/admin/downloads","Downloads")}${item("#/admin/calculator","Financing calculator")}${item("#/admin/policies","Policies")}
+    <div class="grp">Website</div>${item("#/admin/home","Home page")}${item("#/admin/stats","Figures")}${item("#/admin/settings","Brand, contact and links")}${item("#/admin/group","The Rays group")}${item("#/admin/partners","Our partners")}${item("#/admin/faqs","Help and FAQs")}${item("#/admin/branches","Branches and agents")}${item("#/admin/downloads","Downloads")}${item("#/admin/calculator","Financing calculator")}${item("#/admin/policies","Policies")}
     <div class="grp">Pages</div>${secs.map(s=>item("#/admin/pages/"+s.id,s.title)).join("")}
     <div class="grp">Careers</div>${item("#/admin/jobs","Jobs")}${item("#/admin/applications","Applications"+(newApps?` (${newApps})`:""))}
     <div class="grp">Media</div>${item("#/admin/posts","Posts")}${item("#/admin/media","Library")}
@@ -407,6 +407,18 @@ function objList(path, arr, fields, addLbl, tpl){
       <button class="iconbtn" data-act="rm" data-path="${path}" data-i="${i}">Remove</button></div>`).join("")}
     <button class="btn small ghost" data-act="addtpl" data-path="${path}" data-tpl="${esc(JSON.stringify(tpl))}">${esc(addLbl)}</button>`;
 }
+function vGroup(){
+  const d=ensureDraft(); d.group=d.group||{companies:[]};
+  return shell("#/admin/group",`<h1>The Rays group</h1><p class="muted">Who owns and operates each platform. Shown on <a href="#/partners/group">Partner with Us → The Rays group</a>, used by Ask Rays, and published to search engines. Put the owner first.</p>
+    <div class="panel">${fld("group.intro","Introduction",d.group.intro,"area")}</div>
+    <div class="panel">${objList("group.companies",d.group.companies,[{k:"name",label:"Platform or company"},{k:"product",label:"What it is"},{k:"operator",label:"Operated by (legal name)",ph:"Leave empty to show \"a Rays company\""},{k:"for",label:"Who it's for",wide:true},{k:"text",label:"One-sentence description",type:"area",wide:true},{k:"cta",label:"Button label"},{k:"href",label:"Button link",ph:"/partners/white-label"}],"Add company",{name:"",product:"",operator:"",for:"",text:"",cta:"",href:""})}</div>`);
+}
+function vPartners(){
+  const d=ensureDraft(); d.partners=d.partners||[];
+  const imgs=[["","No logo (show the name)"],...libMedia().filter(m=>/^image\//.test(m.contentType||"")).map(m=>[m.id,m.name])];
+  return shell("#/admin/partners",`<h1>Our partners</h1><p class="muted">Shown on <a href="#/partners/partnerships">Partner with Us → Our partners</a>, grouped by category. Only use a partner's logo with their permission; upload it to the <a href="#/admin/media">media library</a> first.</p>
+    <div class="panel">${objList("partners",d.partners,[{k:"name",label:"Partner name"},{k:"category",label:"Category",ph:"NGOs and development partners"},{k:"text",label:"What we do together (optional)",wide:true},{k:"url",label:"Website (optional)",ph:"https://…"},{k:"mediaId",label:"Logo",type:"select",options:imgs}],"Add partner",{name:"",category:"",text:"",url:"",mediaId:""})}</div>`);
+}
 function vFaqs(){
   const d=ensureDraft(); d.faqs=d.faqs||[];
   return shell("#/admin/faqs",`<h1>Help and FAQs</h1><p class="muted">Shown on <a href="#/about/help">About → Help and FAQs</a>, grouped by category, and included in site search and Google results.</p>
@@ -507,6 +519,8 @@ function renderAdmin(app,r,scrollTop){
     case "posts": html= r[2] ? vPostEdit(r[2]==="new" ? (S.newId ||= "new-"+uid()) : r[2]) : vPosts(); break;
     case "inquiries": html=vInquiries(); break;
     case "faqs": html=vFaqs(); break;
+    case "group": html=vGroup(); break;
+    case "partners": html=vPartners(); break;
     case "branches": html=vBranches(); break;
     case "downloads": html=vDownloads(); break;
     case "calculator": html=vCalc(); break;

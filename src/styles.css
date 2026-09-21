@@ -511,3 +511,23 @@ section.block.slim{padding:44px 0}
 .kpis div{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
 .kpis b{display:block;font-size:1.8rem;color:var(--accent)}
 @media (max-width:700px){.kpis{grid-template-columns:1fr 1fr}}
+
+/* ---------- Rays group & partners ---------- */
+.group{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;margin-top:22px}
+.co{display:flex;flex-direction:column;gap:6px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--surface)}
+.co.owner{background:var(--purple);color:#fff;border-color:var(--purple)}
+.co.owner h2,.co.owner .co-prod{color:#fff}.co.owner .muted{color:var(--lavender)}
+.co h2{font-size:1.45rem;color:var(--accent);margin:0}
+.co p{margin:0}
+.co-kind{font-size:13px;font-weight:600;color:var(--muted)}
+.co.owner .co-kind{color:var(--yellow)}
+.co-prod{font-weight:600;color:var(--ink)}
+.co .btn{margin-top:auto;align-self:flex-start}
+.co > p:nth-last-child(2){margin-bottom:10px}
+.partners{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+@media (max-width:700px){.partners{grid-template-columns:1fr 1fr;gap:10px}.partner{min-height:64px;padding:12px 14px}}
+.partner{display:grid;gap:4px;align-content:center;min-height:88px;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-decoration:none;color:var(--ink)}
+a.partner:hover{border-color:var(--accent)}
+.partner img{max-height:40px;width:auto;margin-bottom:6px}
+.partner b{font-size:1.1rem;color:var(--accent)}
+.partner span{font-size:14px;color:var(--muted)}
